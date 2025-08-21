@@ -48,6 +48,7 @@ interface Profile {
   currentCompany?: string
   graduationYear?: string
   profileImage?: string
+  profilePicture?: string
 }
 
 export default function AlumniHome() {
@@ -68,6 +69,7 @@ export default function AlumniHome() {
 
   // Pending connections (compact list)
   const [pendingConnections, setPendingConnections] = useState<any[]>([])
+  const [recentJoiners, setRecentJoiners] = useState<any[]>([])
 
   useEffect(() => {
     // Load profile from existing API
@@ -76,7 +78,7 @@ export default function AlumniHome() {
         const res = await fetch("/api/profile", { credentials: "include" })
         if (!res.ok) return
         const data = await res.json()
-        const profile: Profile = data.profile
+        const profile: Profile = { ...data.profile, profileImage: data.profile.profileImage || data.profile.profilePicture }
         setAlumni(profile)
         setCurrentUserId(profile._id)
       } catch {}
@@ -120,6 +122,25 @@ export default function AlumniHome() {
     fetchProfile()
     fetchPosts()
     fetchPending()
+    const fetchRecent = async () => {
+      try {
+        const res = await fetch('/api/alumni/directory', { credentials: 'include' })
+        if (!res.ok) return
+        const data = await res.json()
+        const list = (data.alumni || [])
+          .map((a: any) => ({
+            _id: a._id?.toString?.() || a._id,
+            firstName: a.firstName,
+            lastName: a.lastName,
+            graduationYear: a.graduationYear,
+            profileImage: a.profilePicture || a.profileImage,
+            createdAt: a.createdAt ? new Date(a.createdAt) : new Date()
+          }))
+          .sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime())
+        setRecentJoiners(list.slice(0, 5))
+      } catch {}
+    }
+    fetchRecent()
   }, [])
 
   const handlePost = async () => {
@@ -305,13 +326,7 @@ export default function AlumniHome() {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Avatar className="w-16 h-16">
-            <AvatarImage src={alumni.profileImage} />
-            <AvatarFallback className="bg-[#a41a2f] text-white text-lg">
-              {alumni.firstName?.[0]}
-              {alumni.lastName?.[0]}
-            </AvatarFallback>
-          </Avatar>
+          
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Welcome back, {alumni.firstName}!</h1>
             <p className="text-gray-600">
@@ -320,9 +335,69 @@ export default function AlumniHome() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left Sidebar (restored) */}
+          <div className="lg:col-span-1 space-y-4">
+            <Card className="overflow-hidden">
+              <CardContent className="pb-4 pt-6">
+                <div className="flex flex-col items-center">
+                  <Avatar className="w-28 h-28">
+                    <AvatarImage src={alumni.profileImage} />
+                    <AvatarFallback className="bg-[#a41a2f] text-white text-xl">
+                      {alumni.firstName?.[0]}
+                      {alumni.lastName?.[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <h3 className="font-semibold text-lg mt-3">
+                    {alumni.firstName} {alumni.lastName}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {alumni.currentRole} {alumni.currentCompany ? `at ${alumni.currentCompany}` : ""}
+                  </p>
+                  <Badge variant="secondary" className="mt-1">
+                    {alumni.department || "Department"}
+                    {alumni.graduationYear ? `, Class of ${alumni.graduationYear}` : ""}
+                  </Badge>
+                  <a href="/alumni/profile" className="mt-3 w-full">
+                    <Button variant="outline" className="w-full">View Profile</Button>
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Recent Joiners */}
+              <Card>
+                <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Recent Joiners</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                {recentJoiners.length === 0 ? (
+                  <div className="text-sm text-gray-500">No new joiners yet.</div>
+                ) : (
+                  recentJoiners.map((a: any) => (
+                    <a key={a._id} href={`/alumni/profile/${a._id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={a.profileImage} />
+                        <AvatarFallback className="bg-[#a41a2f] text-white text-xs">
+                          {a.firstName?.[0]}
+                          {a.lastName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{a.firstName} {a.lastName}</div>
+                        {a.graduationYear && (
+                          <div className="text-xs text-gray-500 truncate">Class of {a.graduationYear}</div>
+                        )}
+                      </div>
+                    </a>
+                  ))
+                )}
+                </CardContent>
+              </Card>
+          </div>
+
           {/* Main Feed */}
-          <div className="space-y-4">
+          <div className="lg:col-span-3 space-y-4">
             {/* Create Post */}
             <Card>
               <CardContent className="p-4">
@@ -472,25 +547,45 @@ export default function AlumniHome() {
                         {/* Media preview: support legacy single media and new multiple media */}
                         {Array.isArray((post as any).media) && (post as any).media.length > 0 ? (
                           <div className="mt-3">
-                            <div className="grid grid-cols-3 gap-2">
-                              {(post as any).media.slice(0, 3).map((m: any, idx: number) => (
-                                <button key={idx} type="button" className="relative" onClick={() => setMediaViewer({ postId: post._id, index: idx })}>
-                                  {m.mimeType?.startsWith('image/') ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={m.dataUrl} alt="media" className="h-40 w-full object-cover rounded" />
-                                  ) : (
-                                    <video className="h-40 w-full object-cover rounded">
-                                      <source src={m.dataUrl} type={m.mimeType} />
-                                    </video>
-                                  )}
-                                  {idx === 2 && (post as any).media.length > 3 && (
-                                    <div className="absolute inset-0 bg-black/50 text-white flex items-center justify-center rounded text-lg">
-                                      +{(post as any).media.length - 3} more
-                                    </div>
-                                  )}
-                                </button>
-                              ))}
-                            </div>
+                            {(() => {
+                              const media = (post as any).media as { dataUrl: string; mimeType: string }[]
+                              if (media.length === 1) {
+                                const m = media[0]
+                                return (
+                                  <button type="button" className="block w-full" onClick={() => setMediaViewer({ postId: post._id, index: 0 })}>
+                                    {m.mimeType.startsWith('image/') ? (
+                                      // eslint-disable-next-line @next/next/no-img-element
+                                      <img src={m.dataUrl} alt="media" className="w-full max-h-[28rem] object-contain rounded" />
+                                    ) : (
+                                      <video controls className="w-full rounded">
+                                        <source src={m.dataUrl} type={m.mimeType} />
+                                      </video>
+                                    )}
+                                  </button>
+                                )
+                              }
+                              return (
+                                <div className="grid grid-cols-3 gap-2">
+                                  {media.slice(0, 3).map((m, idx) => (
+                                    <button key={idx} type="button" className="relative" onClick={() => setMediaViewer({ postId: post._id, index: idx })}>
+                                      {m.mimeType?.startsWith('image/') ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={m.dataUrl} alt="media" className="h-40 w-full object-cover rounded" />
+                                      ) : (
+                                        <video className="h-40 w-full object-cover rounded">
+                                          <source src={m.dataUrl} type={m.mimeType} />
+                                        </video>
+                                      )}
+                                      {idx === 2 && media.length > 3 && (
+                                        <div className="absolute inset-0 bg-black/50 text-white flex items-center justify-center rounded text-lg">
+                                          +{media.length - 3} more
+                                        </div>
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
+                              )
+                            })()}
                           </div>
                         ) : (
                           <>
@@ -505,7 +600,7 @@ export default function AlumniHome() {
                             )}
                           </>
                         )}
-                        <div className="mt-3 flex items-center gap-4 text-sm text-gray-600">
+                        <div className="mt-3 flex items-center gap-4 text-sm text-gray-600 justify-start">
                           <button
                             className="flex items-center gap-1 hover:text-[#a41a2f]"
                             onClick={() => toggleLike(post._id)}
@@ -575,6 +670,7 @@ export default function AlumniHome() {
                             {/* Add comment */}
                             <div className="flex items-start gap-2">
                               <Avatar className="w-8 h-8">
+                                <AvatarImage src={alumni.profileImage} />
                                 <AvatarFallback className="bg-[#a41a2f] text-white text-xs">
                                   {alumni.firstName?.[0]}
                                   {alumni.lastName?.[0]}
@@ -591,8 +687,8 @@ export default function AlumniHome() {
                                   <Button size="sm" onClick={() => submitComment(post._id)} disabled={!(commentInputs[post._id] || "").trim()}>
                                     Comment
                                   </Button>
-                                </div>
-                              </div>
+                          </div>
+                        </div>
                             </div>
                           </div>
                         )}

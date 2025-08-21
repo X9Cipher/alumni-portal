@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, MapPin, Users, Plus, Search, Clock, Star, TrendingUp, Filter, Video } from "lucide-react"
+import { Calendar, MapPin, Users, Plus, Search, Clock, Star, TrendingUp, Video } from "lucide-react"
 
 export default function Events() {
   const events = [
@@ -166,30 +166,7 @@ export default function Events() {
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-lg mb-4">Quick Actions</h3>
-                <div className="space-y-2">
-                  <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Event
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    My Calendar
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
-                    <Users className="w-4 h-4 mr-2" />
-                    Find Co-organizers
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
-                    <Star className="w-4 h-4 mr-2" />
-                    Event Ideas
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            
           </div>
 
           {/* Main Content */}
@@ -205,47 +182,16 @@ export default function Events() {
               </Button>
             </div>
 
-            {/* Search and Filters */}
+            {/* Search */}
             <Card>
               <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="lg:col-span-2">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input placeholder="Search events..." className="pl-10" />
                     </div>
                   </div>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Event Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Events</SelectItem>
-                      <SelectItem value="inperson">In-Person</SelectItem>
-                      <SelectItem value="virtual">Virtual</SelectItem>
-                      <SelectItem value="hybrid">Hybrid</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="networking">Networking</SelectItem>
-                      <SelectItem value="career">Career</SelectItem>
-                      <SelectItem value="tech">Tech Talks</SelectItem>
-                      <SelectItem value="social">Social</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-center gap-2 mt-4">
-                  <Button variant="outline" size="sm">
-                    <Filter className="w-4 h-4 mr-2" />
-                    More Filters
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    Clear All
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -367,27 +313,8 @@ export default function Events() {
                               ))}
                             </div>
 
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Avatar className="w-6 h-6">
-                                  <AvatarImage src={event.organizerAvatar || "/placeholder.svg"} />
-                                  <AvatarFallback className="text-xs">
-                                    {event.organizer
-                                      .split(" ")
-                                      .map((n) => n[0])
-                                      .join("")}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <span className="text-sm text-gray-600">by {event.organizer}</span>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button variant="outline" size="sm" className="bg-transparent">
-                                  View Details
-                                </Button>
-                                <Button size="sm" className={event.isRSVPed ? "bg-green-600 hover:bg-green-700" : ""}>
-                                  {event.isRSVPed ? "Going" : "RSVP"}
-                                </Button>
-                              </div>
+                            <div className="flex items-center justify-end">
+                              <Button variant="outline" size="sm" className="bg-transparent">View Details</Button>
                             </div>
                           </div>
                         </div>

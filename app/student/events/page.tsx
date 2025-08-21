@@ -13,10 +13,7 @@ import {
   MapPin, 
   Users, 
   Search, 
-  Filter, 
   Star, 
-  Share2, 
-  MessageCircle,
   Clock,
   Globe,
   Lock,
@@ -210,16 +207,7 @@ export default function StudentEvents() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Alumni Events</h1>
           <p className="text-gray-600">Discover networking events, workshops, and social gatherings</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="hover:bg-green-50 hover:text-green-600">
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-          </Button>
-          <Button className="bg-green-600 hover:bg-green-700">
-            <Calendar className="w-4 h-4 mr-2" />
-            My Calendar
-          </Button>
-        </div>
+        <div className="flex gap-2"></div>
       </div>
 
       {error && (
@@ -231,41 +219,19 @@ export default function StudentEvents() {
       )}
 
       <Tabs defaultValue="browse" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="browse">Browse Events</TabsTrigger>
-          <TabsTrigger value="my-rsvps">My RSVPs ({myRSVPs.length})</TabsTrigger>
-          <TabsTrigger value="interested">Interested ({interestedEvents.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="browse" className="space-y-6">
-          {/* Search and Filters */}
+          {/* Search + Time filter */}
           <Card>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="lg:col-span-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input 
-                      placeholder="Search events, topics, or locations..." 
-                      className="pl-10"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
+                <div className="relative lg:col-span-2">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input placeholder="Search events, topics, or locations..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Event Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="workshop">Workshop</SelectItem>
-                    <SelectItem value="networking">Networking</SelectItem>
-                    <SelectItem value="seminar">Seminar</SelectItem>
-                    <SelectItem value="social">Social</SelectItem>
-                    <SelectItem value="career">Career</SelectItem>
-                  </SelectContent>
-                </Select>
                 <Select value={filterTime} onValueChange={setFilterTime}>
                   <SelectTrigger>
                     <SelectValue placeholder="Time" />
@@ -273,7 +239,7 @@ export default function StudentEvents() {
                   <SelectContent>
                     <SelectItem value="all">All Events</SelectItem>
                     <SelectItem value="upcoming">Upcoming</SelectItem>
-                    <SelectItem value="past">Past Events</SelectItem>
+                    <SelectItem value="past">Past</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -343,24 +309,7 @@ export default function StudentEvents() {
                       </div>
                     </div>
 
-                    {/* Organized by */}
-                    <div className="bg-green-50 rounded-lg p-4 mb-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="bg-green-600 text-white text-xs">
-                            {event.organizer.firstName[0]}{event.organizer.lastName[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-semibold text-green-800">
-                            Organized by {event.organizer.firstName} {event.organizer.lastName}
-                          </p>
-                          <p className="text-xs text-green-600">
-                            {event.organizer.userType === 'admin' ? 'College Administration' : 'Alumni'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    {/* Organizer section removed */}
 
                     {/* Actions removed: RSVP, View Details, Comments, Share */}
                   </CardContent>
@@ -370,51 +319,7 @@ export default function StudentEvents() {
           </div>
         </TabsContent>
 
-        <TabsContent value="my-rsvps" className="space-y-6">
-          <div className="space-y-4">
-            {myRSVPs.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No RSVPs yet</h3>
-                  <p className="text-gray-600">RSVP to events you're interested in attending.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-600">Your RSVP'd events will appear here.</p>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="interested" className="space-y-6">
-          <div className="space-y-4">
-            {interestedEvents.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Star className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No interested events</h3>
-                  <p className="text-gray-600">Mark events as interested to keep track of them.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              interestedEvents.map((event) => (
-                <Card key={event.id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">{event.title}</h3>
-                        <p className="text-gray-600">{event.date}</p>
-                      </div>
-                      {/* Buttons removed */}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </TabsContent>
+        
       </Tabs>
     </div>
   )

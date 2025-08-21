@@ -24,8 +24,17 @@ import {
   Settings,
   Briefcase,
   Award,
-  Globe
+  Globe,
+  MessageSquare,
+  ThumbsUp,
+  Image as ImageIcon,
+  Video as VideoIcon,
+  MoreHorizontal
 } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -64,6 +73,17 @@ export default function AlumniProfile() {
   const [editedProfile, setEditedProfile] = useState<Partial<AlumniProfile>>({})
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null)
   const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null)
+  // Activity feed state
+  const [posts, setPosts] = useState<any[]>([])
+  const [newPostContent, setNewPostContent] = useState("")
+  const [selectedMedia, setSelectedMedia] = useState<{ dataUrl: string; mimeType: string }[]>([])
+  const [editingPostId, setEditingPostId] = useState<string | null>(null)
+  const [editingContent, setEditingContent] = useState("")
+  const [editingMedia, setEditingMedia] = useState<{ dataUrl: string; mimeType: string }[]>([])
+  const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set())
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
+  const [likesOpenForPostId, setLikesOpenForPostId] = useState<string | null>(null)
+  const [likesUsers, setLikesUsers] = useState<Array<{ _id: string; firstName: string; lastName: string; userType: string; profilePicture?: string; profileImage?: string }>>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -98,6 +118,15 @@ export default function AlumniProfile() {
         const data = await response.json()
         setProfile(data.profile)
         setEditedProfile(data.profile)
+        // Load posts feed and filter by author
+        try {
+          const postsRes = await fetch('/api/posts', { credentials: 'include' })
+          if (postsRes.ok) {
+            const postsData = await postsRes.json()
+            const uid = (data.profile as any)._id?.toString?.() || (data.profile as any)._id
+            setPosts((postsData.posts || []).filter((p: any) => (p.authorId?.$oid || p.authorId || '').toString() === uid))
+          }
+        } catch {}
       } else {
         toast.error('Failed to fetch profile')
       }
@@ -106,6 +135,61 @@ export default function AlumniProfile() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const normalizeId = (id: any): string => {
+    if (!id) return ''
+    if (typeof id === 'string') return id
+    if (typeof id === 'object' && typeof id.$oid === 'string') return id.$oid
+    return id.toString?.() || ''
+  }
+
+  const openLikesDialog = async (post: any) => {
+    const likeIds = (post.likes || []).map((id: any) => normalizeId(id)).filter(Boolean)
+    setLikesOpenForPostId(post._id)
+    try {
+      const users = await Promise.all(
+        likeIds.slice(0, 50).map(async (id: string) => {
+          const res = await fetch(`/api/users/${id}`)
+          const data = await res.json()
+          if (res.ok && data.user) return data.user
+          return null
+        })
+      )
+      setLikesUsers(users.filter(Boolean) as any)
+    } catch {
+      setLikesUsers([])
+    }
+  }
+
+  const toggleLike = async (postId: string) => {
+    const res = await fetch(`/api/posts?action=like&postId=${postId}`, { method: 'PUT', credentials: 'include' })
+    const data = await res.json()
+    if (!res.ok) return
+    // We don't have current user id here; refetch user quickly
+    let me = editedProfile as any
+    if (!me?._id) {
+      try { const r = await fetch('/api/profile'); if (r.ok) { const d = await r.json(); me = d.profile } } catch {}
+    }
+    const myId = (me?._id || '').toString()
+    setPosts((prev) => prev.map((p) => p._id === postId ? { ...p, likes: updateLikesArray(p.likes || [], myId, data.liked) } : p))
+  }
+
+  const updateLikesArray = (likes: any[], userId: string, liked: boolean) => {
+    const has = likes.some((id) => normalizeId(id) === userId)
+    if (liked && !has) return [...likes, userId]
+    if (!liked && has) return likes.filter((id) => normalizeId(id) !== userId)
+    return likes
+  }
+
+  const submitComment = async (postId: string) => {
+    const text = (commentInputs[postId] || '').trim()
+    if (!text) return
+    const res = await fetch(`/api/posts?action=comment&postId=${postId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: text }), credentials: 'include' })
+    const data = await res.json()
+    if (!res.ok) return
+    setPosts((prev) => prev.map((p) => (p._id === postId ? { ...p, comments: data.comments } : p)))
+    setCommentInputs((prev) => ({ ...prev, [postId]: '' }))
   }
 
   const handleLogout = async () => {
@@ -216,6 +300,20 @@ export default function AlumniProfile() {
       ...prev,
       profilePicture: undefined
     }))
+  }
+
+  const saveEdit = async () => {
+    if (!editingPostId) return
+    const res = await fetch(`/api/posts?action=edit&postId=${editingPostId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ content: editingContent, media: editingMedia }),
+    })
+    if (res.ok) {
+      setPosts((prev) => prev.map((p) => p._id === editingPostId ? { ...p, content: editingContent, media: editingMedia } : p))
+      setEditingPostId(null)
+    }
   }
 
   if (loading) {
@@ -376,17 +474,23 @@ export default function AlumniProfile() {
           </Card>
         </div>
 
-        {/* Main Profile Information */}
+        {/* Main Profile Information and Activity */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Personal Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Personal Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="activity">Activity</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    Personal Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
@@ -427,223 +531,415 @@ export default function AlumniProfile() {
                   <p className="text-gray-900">{profile.bio || 'No bio provided'}</p>
                 )}
               </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          {/* Professional Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="w-5 h-5" />
-                Professional Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Current Company</label>
-                  {editing ? (
-                    <Input
-                      value={editedProfile.currentCompany || ''}
-                      onChange={(e) => handleInputChange('currentCompany', e.target.value)}
-                      placeholder="Company name"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profile.currentCompany || 'Not provided'}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Current Position</label>
-                  {editing ? (
-                    <Input
-                      value={editedProfile.currentPosition || ''}
-                      onChange={(e) => handleInputChange('currentPosition', e.target.value)}
-                      placeholder="Job title"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profile.currentPosition || 'Not provided'}</p>
-                  )}
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Professional Experience</label>
-                {editing ? (
-                  <Textarea
-                    value={editedProfile.experience?.join('\n') || ''}
-                    onChange={(e) => handleArrayInputChange('experience', e.target.value.replace(/\n/g, ','))}
-                    placeholder="List your work experience (one per line)"
-                    rows={4}
-                  />
-                ) : (
-                  <div className="space-y-1">
-                    {profile.experience && profile.experience.length > 0 ? (
-                      profile.experience.map((exp, index) => (
-                        <p key={index} className="text-gray-900">• {exp}</p>
-                      ))
+              {/* Professional Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Briefcase className="w-5 h-5" />
+                    Professional Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Company</label>
+                      {editing ? (
+                        <Input
+                          value={editedProfile.currentCompany || ''}
+                          onChange={(e) => handleInputChange('currentCompany', e.target.value)}
+                          placeholder="Company name"
+                        />
+                      ) : (
+                        <p className="text-gray-900">{profile.currentCompany || 'Not provided'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Current Position</label>
+                      {editing ? (
+                        <Input
+                          value={editedProfile.currentPosition || ''}
+                          onChange={(e) => handleInputChange('currentPosition', e.target.value)}
+                          placeholder="Job title"
+                        />
+                      ) : (
+                        <p className="text-gray-900">{profile.currentPosition || 'Not provided'}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Professional Experience</label>
+                    {editing ? (
+                      <Textarea
+                        value={editedProfile.experience?.join('\n') || ''}
+                        onChange={(e) => handleArrayInputChange('experience', e.target.value.replace(/\n/g, ','))}
+                        placeholder="List your work experience (one per line)"
+                        rows={4}
+                      />
                     ) : (
-                      <p className="text-gray-500">No experience added</p>
+                      <div className="space-y-1">
+                        {profile.experience && profile.experience.length > 0 ? (
+                          profile.experience.map((exp, index) => (
+                            <p key={index} className="text-gray-900">• {exp}</p>
+                          ))
+                        ) : (
+                          <p className="text-gray-500">No experience added</p>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          {/* Academic Background */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="w-5 h-5" />
-                Academic Background
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Degree</label>
-                  {editing ? (
-                    <Input
-                      value={editedProfile.degree || ''}
-                      onChange={(e) => handleInputChange('degree', e.target.value)}
-                      placeholder="e.g., Bachelor of Technology"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profile.degree}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Major</label>
-                  {editing ? (
-                    <Input
-                      value={editedProfile.major || ''}
-                      onChange={(e) => handleInputChange('major', e.target.value)}
-                      placeholder="e.g., Computer Science"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{profile.major}</p>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Academic Background */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5" />
+                    Academic Background
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Degree</label>
+                      {editing ? (
+                        <Input
+                          value={editedProfile.degree || ''}
+                          onChange={(e) => handleInputChange('degree', e.target.value)}
+                          placeholder="e.g., Bachelor of Technology"
+                        />
+                      ) : (
+                        <p className="text-gray-900">{profile.degree}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Major</label>
+                      {editing ? (
+                        <Input
+                          value={editedProfile.major || ''}
+                          onChange={(e) => handleInputChange('major', e.target.value)}
+                          placeholder="e.g., Computer Science"
+                        />
+                      ) : (
+                        <p className="text-gray-900">{profile.major}</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Skills & Achievements */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="w-5 h-5" />
-                Skills & Achievements
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Skills</label>
-                {editing ? (
-                  <Input
-                    value={editedProfile.skills?.join(', ') || ''}
-                    onChange={(e) => handleArrayInputChange('skills', e.target.value)}
-                    placeholder="e.g., JavaScript, Python, React, Leadership (comma separated)"
-                  />
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {profile.skills && profile.skills.length > 0 ? (
-                      profile.skills.map((skill, index) => (
-                        <Badge key={index} variant="outline">{skill}</Badge>
-                      ))
+              {/* Skills & Achievements */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="w-5 h-5" />
+                    Skills & Achievements
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Skills</label>
+                    {editing ? (
+                      <Input
+                        value={editedProfile.skills?.join(', ') || ''}
+                        onChange={(e) => handleArrayInputChange('skills', e.target.value)}
+                        placeholder="e.g., JavaScript, Python, React, Leadership (comma separated)"
+                      />
                     ) : (
-                      <p className="text-gray-500">No skills added</p>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.skills && profile.skills.length > 0 ? (
+                          profile.skills.map((skill, index) => (
+                            <Badge key={index} variant="outline">{skill}</Badge>
+                          ))
+                        ) : (
+                          <p className="text-gray-500">No skills added</p>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Achievements</label>
-                {editing ? (
-                  <Textarea
-                    value={editedProfile.achievements?.join('\n') || ''}
-                    onChange={(e) => handleArrayInputChange('achievements', e.target.value.replace(/\n/g, ','))}
-                    placeholder="List your achievements (one per line)"
-                    rows={3}
-                  />
-                ) : (
-                  <div className="space-y-1">
-                    {profile.achievements && profile.achievements.length > 0 ? (
-                      profile.achievements.map((achievement, index) => (
-                        <p key={index} className="text-gray-900">• {achievement}</p>
-                      ))
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Achievements</label>
+                    {editing ? (
+                      <Textarea
+                        value={editedProfile.achievements?.join('\n') || ''}
+                        onChange={(e) => handleArrayInputChange('achievements', e.target.value.replace(/\n/g, ','))}
+                        placeholder="List your achievements (one per line)"
+                        rows={3}
+                      />
                     ) : (
-                      <p className="text-gray-500">No achievements added</p>
+                      <div className="space-y-1">
+                        {profile.achievements && profile.achievements.length > 0 ? (
+                          profile.achievements.map((achievement, index) => (
+                            <p key={index} className="text-gray-900">• {achievement}</p>
+                          ))
+                        ) : (
+                          <p className="text-gray-500">No achievements added</p>
+                        )}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          {/* Social Links */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="w-5 h-5" />
-                Professional Links
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
-                {editing ? (
-                  <Input
-                    value={editedProfile.linkedinUrl || ''}
-                    onChange={(e) => handleInputChange('linkedinUrl', e.target.value)}
-                    placeholder="https://linkedin.com/in/yourprofile"
-                  />
-                ) : (
-                  <p className="text-gray-900">{profile.linkedinUrl || 'Not provided'}</p>
+              {/* Social Links */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="w-5 h-5" />
+                    Professional Links
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
+                    {editing ? (
+                      <Input
+                        value={editedProfile.linkedinUrl || ''}
+                        onChange={(e) => handleInputChange('linkedinUrl', e.target.value)}
+                        placeholder="https://linkedin.com/in/yourprofile"
+                      />
+                    ) : (
+                      <p className="text-gray-900">{profile.linkedinUrl || 'Not provided'}</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">GitHub URL</label>
+                    {editing ? (
+                      <Input
+                        value={editedProfile.githubUrl || ''}
+                        onChange={(e) => handleInputChange('githubUrl', e.target.value)}
+                        placeholder="https://github.com/yourusername"
+                      />
+                    ) : (
+                      <p className="text-gray-900">{profile.githubUrl || 'Not provided'}</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Portfolio URL</label>
+                    {editing ? (
+                      <Input
+                        value={editedProfile.portfolioUrl || ''}
+                        onChange={(e) => handleInputChange('portfolioUrl', e.target.value)}
+                        placeholder="https://yourportfolio.com"
+                      />
+                    ) : (
+                      <p className="text-gray-900">{profile.portfolioUrl || 'Not provided'}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+                    {editing ? (
+                      <Input
+                        value={editedProfile.websiteUrl || ''}
+                        onChange={(e) => handleInputChange('websiteUrl', e.target.value)}
+                        placeholder="https://yourwebsite.com"
+                      />
+                    ) : (
+                      <p className="text-gray-900">{profile.websiteUrl || 'Not provided'}</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="activity">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Activity</CardTitle>
+                </CardHeader>
+                <CardContent>
+              {/* Create Post */}
+              <div className="mb-4">
+                <Textarea placeholder="Share an update..." value={newPostContent} onChange={(e) => setNewPostContent(e.target.value)} className="min-h-[80px]" />
+                {selectedMedia.length > 0 && (
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {selectedMedia.map((m, idx) => (
+                      <div key={idx} className="relative">
+                        {m.mimeType.startsWith('image/') ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={m.dataUrl} alt="media" className="h-28 w-full object-cover rounded" />
+                        ) : (
+                          <video className="h-28 w-full object-cover rounded">
+                            <source src={m.dataUrl} type={m.mimeType} />
+                          </video>
+                        )}
+                        <button className="absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6" onClick={() => setSelectedMedia(selectedMedia.filter((_, i) => i !== idx))}>×</button>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">GitHub URL</label>
-                {editing ? (
-                  <Input
-                    value={editedProfile.githubUrl || ''}
-                    onChange={(e) => handleInputChange('githubUrl', e.target.value)}
-                    placeholder="https://github.com/yourusername"
-                  />
-                ) : (
-                  <p className="text-gray-900">{profile.githubUrl || 'Not provided'}</p>
-                )}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Portfolio URL</label>
-                {editing ? (
-                  <Input
-                    value={editedProfile.portfolioUrl || ''}
-                    onChange={(e) => handleInputChange('portfolioUrl', e.target.value)}
-                    placeholder="https://yourportfolio.com"
-                  />
-                ) : (
-                  <p className="text-gray-900">{profile.portfolioUrl || 'Not provided'}</p>
-                )}
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <label className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-[#a41a2f] cursor-pointer">
+                      <ImageIcon className="w-4 h-4" /> Photo
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => setSelectedMedia((prev) => [...prev, { dataUrl: r.result as string, mimeType: f.type }]); r.readAsDataURL(f) }} />
+                    </label>
+                    <label className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-[#a41a2f] cursor-pointer">
+                      <VideoIcon className="w-4 h-4" /> Video
+                      <input type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => setSelectedMedia((prev) => [...prev, { dataUrl: r.result as string, mimeType: f.type }]); r.readAsDataURL(f) }} />
+                    </label>
+                  </div>
+                  <Button size="sm" onClick={async () => {
+                    if (!newPostContent.trim() && selectedMedia.length === 0) return
+                    const res = await fetch('/api/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ type: selectedMedia[0]?.mimeType?.startsWith('image/') ? 'image' : selectedMedia[0]?.mimeType?.startsWith('video/') ? 'video' : 'text', content: newPostContent, media: selectedMedia }) })
+                    const data = await res.json()
+                    if (res.ok) { setPosts([data.post, ...posts]); setNewPostContent(''); setSelectedMedia([]) }
+                  }}>Post</Button>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
-                {editing ? (
-                  <Input
-                    value={editedProfile.websiteUrl || ''}
-                    onChange={(e) => handleInputChange('websiteUrl', e.target.value)}
-                    placeholder="https://yourwebsite.com"
-                  />
+              {/* Posts List (owned by user) */}
+              <div className="space-y-4">
+                {posts.length === 0 ? (
+                  <div className="p-4 text-sm text-gray-600">No posts yet.</div>
+                ) : posts.map((post) => (
+                  <div key={post._id} className="p-4 border rounded-lg shadow-sm bg-white">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="font-semibold">{profile.firstName} {profile.lastName}</div>
+                        <div className="mt-2 whitespace-pre-wrap text-sm text-gray-800">{post.content}</div>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="p-1 rounded hover:bg-gray-100">
+                            <MoreHorizontal className="w-5 h-5" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => { setEditingPostId(post._id); setEditingContent(post.content); setEditingMedia(post.media || (post.mediaDataUrl ? [{ dataUrl: post.mediaDataUrl, mimeType: post.mediaMimeType }] : [])) }}>Edit</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600" onClick={async () => { if (!confirm('Delete this post?')) return; const res = await fetch(`/api/posts?action=delete&postId=${post._id}`, { method: 'PUT', credentials: 'include' }); if (res.ok) setPosts((prev) => prev.filter((p) => p._id !== post._id)) }}>Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                    {/* Media preview (simple) */}
+                    {Array.isArray(post.media) && post.media.length > 0 && (
+                      <div className="mt-3">
+                        {post.media.length === 1 ? (
+                          <div className="flex justify-center">
+                            {post.media[0].mimeType?.startsWith('image/') ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={post.media[0].dataUrl} alt="media" className="max-h-96 rounded object-contain" />
+                            ) : (
+                              <video controls className="max-h-96 rounded">
+                                <source src={post.media[0].dataUrl} type={post.media[0].mimeType} />
+                              </video>
+                            )}
+                          </div>
+                        ) : post.media.length === 2 ? (
+                          <div className="grid grid-cols-2 gap-2">
+                            {post.media.map((m: any, idx: number) => (
+                              <div key={idx}>
+                                {m.mimeType?.startsWith('image/') ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={m.dataUrl} alt="media" className="h-64 w-full object-cover rounded" />
+                                ) : (
+                                  <video className="h-64 w-full object-cover rounded" controls>
+                                    <source src={m.dataUrl} type={m.mimeType} />
+                                  </video>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-2">
+                            {post.media.slice(0, 3).map((m: any, idx: number) => (
+                              <div key={idx} className="relative">
+                                {m.mimeType?.startsWith('image/') ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={m.dataUrl} alt="media" className="h-40 w-full object-cover rounded" />
+                                ) : (
+                                  <video className="h-40 w-full object-cover rounded">
+                                    <source src={m.dataUrl} type={m.mimeType} />
+                                  </video>
+                                )}
+                                {idx === 2 && post.media.length > 3 && (
+                                  <div className="absolute inset-0 bg-black/50 text-white flex items-center justify-center rounded text-lg">+{post.media.length - 3} more</div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="mt-3 flex items-center gap-4 text-sm text-gray-600">
+                      <button className="flex items-center gap-1 hover:text-[#a41a2f]" onClick={() => toggleLike(post._id)}>
+                        <ThumbsUp className="w-4 h-4" />
+                        <span className="underline-offset-2 hover:underline" onClick={(e) => { e.stopPropagation(); openLikesDialog(post) }}>{(post.likes?.length || 0)} likes</span>
+                      </button>
+                      <button className="flex items-center gap-1 hover:text-[#a41a2f]" onClick={() => { const next = new Set(expandedComments); next.has(post._id) ? next.delete(post._id) : next.add(post._id); setExpandedComments(next) }}>
+                        <MessageSquare className="w-4 h-4" />
+                        <span>{post.comments?.length ? `${post.comments.length} comments` : 'Comment'}</span>
+                      </button>
+                    </div>
+
+                    {expandedComments.has(post._id) && (
+                      <div className="mt-3 space-y-3">
+                        <div className="space-y-3">
+                          {(post.comments || []).map((c: any) => (
+                            <div key={(c._id as any) || Math.random()} className="flex items-start gap-2">
+                              <div className="bg-gray-100 rounded-md px-3 py-2 text-sm">
+                                <span className="font-semibold mr-2">{c.firstName} {c.lastName}</span>
+                                <span>{c.content}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1">
+                            <Textarea placeholder="Add a comment..." value={commentInputs[post._id] || ''} onChange={(e) => setCommentInputs((prev) => ({ ...prev, [post._id]: e.target.value }))} className="min-h-[60px]" />
+                            <div className="mt-2 flex justify-end">
+                              <Button size="sm" onClick={() => submitComment(post._id)} disabled={!(commentInputs[post._id] || '').trim()}>Comment</Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          {/* Likes dialog */}
+          <Dialog open={!!likesOpenForPostId} onOpenChange={(v) => !v && setLikesOpenForPostId(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Liked by</DialogTitle>
+              </DialogHeader>
+              <div className="max-h-80 overflow-y-auto space-y-3">
+                {likesUsers.length === 0 ? (
+                  <div className="text-sm text-gray-600">No likes yet.</div>
                 ) : (
-                  <p className="text-gray-900">{profile.websiteUrl || 'Not provided'}</p>
+                  likesUsers.map((u) => (
+                    <div key={u._id} className="flex items-center gap-3">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={u.profilePicture || u.profileImage} />
+                        <AvatarFallback className="bg-[#a41a2f] text-white text-xs">
+                          {u.firstName?.[0]}
+                          {u.lastName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="text-sm">
+                        <div className="font-medium">{u.firstName} {u.lastName}</div>
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </DialogContent>
+          </Dialog>
+
+          {/* Professional Information, Academic Background, Skills & Achievements, and Professional Links are shown in Overview tab above */}
         </div>
       </div>
     </div>

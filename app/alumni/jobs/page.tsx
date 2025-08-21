@@ -225,6 +225,8 @@ export default function AlumniJobs() {
       }
       // Persist applied state locally
       const newSet = new Set(appliedJobIds); newSet.add(applyJob._id); setAppliedJobIds(newSet)
+      // Increment applications count dynamically in UI
+      setJobs((prev) => prev.map((j) => j._id === applyJob._id ? { ...j, applications: (j.applications || 0) + 1 } : j))
       try { const key = `appliedJobs:${currentUser._id}`; localStorage.setItem(key, JSON.stringify(Array.from(newSet))) } catch {}
       setApplyOpen(false)
     } finally {
@@ -263,10 +265,6 @@ export default function AlumniJobs() {
           <p className="text-gray-600">Browse and manage job postings from the alumni network</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="hover:bg-green-50 hover:text-green-600">
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-          </Button>
           <Button 
             className="bg-green-600 hover:bg-green-700"
             onClick={() => router.push('/alumni/jobs/create')}
@@ -286,8 +284,9 @@ export default function AlumniJobs() {
       )}
 
       <Tabs defaultValue="browse" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="browse">Browse All Jobs ({allJobs.length})</TabsTrigger>
+          <TabsTrigger value="applied">Applied Jobs ({appliedJobIds.size})</TabsTrigger>
           <TabsTrigger value="my-jobs">My Job Posts ({myJobs.length})</TabsTrigger>
         </TabsList>
 
@@ -295,18 +294,29 @@ export default function AlumniJobs() {
           {/* Search and Filters */}
           <Card>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="lg:col-span-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input 
-                      placeholder="Search jobs, companies, or skills..." 
+                      placeholder="Search jobs..." 
                       className="pl-10"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
                 </div>
+                <Select value={filterExperience} onValueChange={setFilterExperience}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Experience" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Levels</SelectItem>
+                    {hasEntry && <SelectItem value="entry">Entry Level</SelectItem>}
+                    {hasIntern && <SelectItem value="intern">Internship</SelectItem>}
+                    {hasNewGrad && <SelectItem value="new-grad">New Graduate</SelectItem>}
+                  </SelectContent>
+                </Select>
                 <Select value={filterType} onValueChange={setFilterType}>
                   <SelectTrigger>
                     <SelectValue placeholder="Job Type" />
@@ -326,17 +336,6 @@ export default function AlumniJobs() {
                     <SelectItem value="all">All Status</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={filterExperience} onValueChange={setFilterExperience}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Experience" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Levels</SelectItem>
-                    {hasEntry && <SelectItem value="entry">Entry Level</SelectItem>}
-                    {hasIntern && <SelectItem value="intern">Internship</SelectItem>}
-                    {hasNewGrad && <SelectItem value="new-grad">New Graduate</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
@@ -444,6 +443,40 @@ export default function AlumniJobs() {
                           <ExternalLink className="w-4 h-4 mr-2" />
                           {appliedJobIds.has(job._id) ? 'Applied' : 'Apply'}
                         </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="applied" className="space-y-6">
+          <div className="space-y-4">
+            {allJobs.filter(j => appliedJobIds.has(j._id)).length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No applied jobs yet</h3>
+                  <p className="text-gray-600">Apply to jobs from Browse tab and they’ll show up here.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              allJobs.filter(j => appliedJobIds.has(j._id)).map((job) => (
+                <Card key={job._id} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4 mb-2">
+                      <Avatar className="w-12 h-12"><AvatarFallback>{job.company[0]}</AvatarFallback></Avatar>
+                      <div>
+                        <div className="flex items-center gap-2"><h3 className="text-lg font-semibold">{job.title}</h3><Badge className={getJobTypeColor(job.type)}>{job.type}</Badge></div>
+                        <div className="text-sm text-gray-600 flex gap-4"><span className="flex items-center gap-1"><Building className="w-4 h-4" />{job.company}</span><span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{job.location}</span></div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <div className="text-sm text-gray-600 flex items-center gap-2"><Clock className="w-4 h-4" />Applied</div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setViewJob(job)}>View Details</Button>
                       </div>
                     </div>
                   </CardContent>

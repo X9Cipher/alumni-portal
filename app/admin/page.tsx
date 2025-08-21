@@ -31,6 +31,8 @@ import {
   Loader2
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { Textarea } from "@/components/ui/textarea"
+
 
 interface User {
   _id: string
@@ -511,7 +513,91 @@ export default function AdminDashboard() {
             </Card>
           </div>
         </main>
+
+        {/* Posts moderation feed (admin can delete any post) */}
+        <section className="p-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Community Feed</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AdminFeed />
+            </CardContent>
+          </Card>
+        </section>
       </div>
+    </div>
+  )
+}
+
+function AdminFeed() {
+  const [posts, setPosts] = useState<any[]>([])
+  const [currentUserId, setCurrentUserId] = useState<string>("")
+  useEffect(() => {
+    const load = async () => {
+      const profile = await fetch('/api/profile', { credentials: 'include' })
+      if (profile.ok) {
+        const d = await profile.json()
+        setCurrentUserId(d.profile._id)
+      }
+      const res = await fetch('/api/posts', { credentials: 'include' })
+      if (res.ok) {
+        const d = await res.json()
+        setPosts(d.posts || [])
+      }
+    }
+    load()
+  }, [])
+
+  const toggleLike = async (postId: string) => {
+    const res = await fetch(`/api/posts?action=like&postId=${postId}`, { method: 'PUT', credentials: 'include' })
+    const data = await res.json()
+    if (!res.ok) return
+    setPosts((prev) => prev.map((p) => (p._id === postId ? { ...p, likes: (p.likes || []).includes(currentUserId) ? (data.liked ? p.likes : (p.likes || []).filter((id: string) => id !== currentUserId)) : (data.liked ? [...(p.likes || []), currentUserId] : p.likes) } : p)))
+  }
+
+  const deletePost = async (postId: string) => {
+    const res = await fetch(`/api/posts?action=delete&postId=${postId}`, { method: 'PUT', credentials: 'include' })
+    if (res.ok) setPosts((prev) => prev.filter((p) => p._id !== postId))
+  }
+
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
+  const comment = async (postId: string) => {
+    const text = (commentInputs[postId] || '').trim()
+    if (!text) return
+    const res = await fetch(`/api/posts?action=comment&postId=${postId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: text }), credentials: 'include' })
+    const data = await res.json()
+    if (!res.ok) return
+    setPosts((prev) => prev.map((p) => (p._id === postId ? { ...p, comments: data.comments } : p)))
+    setCommentInputs((prev) => ({ ...prev, [postId]: '' }))
+  }
+
+  return (
+    <div className="space-y-4">
+      {posts.map((post) => (
+        <div key={post._id} className="p-4 border rounded-md">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="font-semibold">{post.authorFirstName} {post.authorLastName}</div>
+              <div className="mt-2 whitespace-pre-wrap">{post.content}</div>
+            </div>
+            <button className="text-red-600 text-sm" onClick={() => deletePost(post._id)}>Delete</button>
+          </div>
+          <div className="mt-3 flex items-center gap-4 text-sm text-gray-600">
+            <button className="flex items-center gap-1" onClick={() => toggleLike(post._id)}>
+              <ThumbsUp className="w-4 h-4" />
+              <span>{(post.likes?.length || 0)} likes</span>
+            </button>
+            <div className="flex-1" />
+          </div>
+          <div className="mt-3">
+            <Textarea value={commentInputs[post._id] || ''} onChange={(e) => setCommentInputs({ ...commentInputs, [post._id]: e.target.value })} placeholder="Add a comment..." className="min-h-[60px]" />
+            <div className="mt-2 flex justify-end">
+              <Button size="sm" onClick={() => comment(post._id)} disabled={!(commentInputs[post._id] || '').trim()}>Comment</Button>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

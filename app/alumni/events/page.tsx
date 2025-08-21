@@ -13,10 +13,6 @@ import {
   MapPin, 
   Users, 
   Search, 
-  Filter, 
-  Star, 
-  Share2, 
-  MessageCircle,
   Clock,
   Globe,
   Lock,
@@ -151,16 +147,7 @@ export default function AlumniEventsPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Alumni Events</h1>
           <p className="text-gray-600">Discover networking events, workshops, and social gatherings</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="hover:bg-green-50 hover:text-green-600">
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-          </Button>
-          <Button className="bg-green-600 hover:bg-green-700">
-            <Calendar className="w-4 h-4 mr-2" />
-            My Calendar
-          </Button>
-        </div>
+        <div className="flex gap-2"></div>
       </div>
 
       {error && (
@@ -172,35 +159,20 @@ export default function AlumniEventsPage() {
       )}
 
       <Tabs defaultValue="browse" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="browse">Browse Events</TabsTrigger>
-          <TabsTrigger value="my-rsvps">My RSVPs (0)</TabsTrigger>
-          <TabsTrigger value="interested">Interested (0)</TabsTrigger>
         </TabsList>
 
         <TabsContent value="browse" className="space-y-6">
           <Card>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-center">
                 <div className="lg:col-span-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input placeholder="Search events, topics, or locations..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                   </div>
                 </div>
-                <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Event Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="workshop">Workshop</SelectItem>
-                    <SelectItem value="networking">Networking</SelectItem>
-                    <SelectItem value="seminar">Seminar</SelectItem>
-                    <SelectItem value="social">Social</SelectItem>
-                    <SelectItem value="career">Career</SelectItem>
-                  </SelectContent>
-                </Select>
                 <Select value={filterTime} onValueChange={setFilterTime}>
                   <SelectTrigger>
                     <SelectValue placeholder="Time" />
