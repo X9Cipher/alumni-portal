@@ -33,36 +33,71 @@ export async function GET(request: NextRequest) {
           firstName: 1,
           lastName: 1,
           email: 1,
+          phone: 1,
           userType: 1,
           department: 1,
           currentYear: 1,
           graduationYear: 1,
           linkedinUrl: 1,
           profilePicture: 1,
-          isOnline: 1
+          isOnline: 1,
+          showEmailInProfile: 1,
+          showPhoneInProfile: 1
         }
       }
     ).toArray()
 
-    // Format the response
-    const formattedStudents = students.map(student => ({
-      _id: student._id,
-      firstName: student.firstName || '',
-      lastName: student.lastName || '',
-      fullName: `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Unknown Student',
-      email: student.email || '',
-      userType: 'student',
-      department: student.department || 'Unknown Department',
-      currentYear: student.currentYear || null,
-      graduationYear: student.graduationYear || null,
-      linkedinUrl: student.linkedinUrl || '',
-      profilePicture: student.profilePicture || '',
-      isOnline: student.isOnline || false
-    }))
+    // Format the response and apply privacy settings
+    const formattedStudents = students.map(student => {
+      // Apply privacy settings
+      let email = student.email || ''
+      let phone = student.phone || ''
+      
+      // Hide email if privacy setting is disabled
+      if (student.showEmailInProfile === false) {
+        email = ''
+      }
+      
+      // Hide phone if privacy setting is disabled
+      if (student.showPhoneInProfile === false) {
+        phone = ''
+      }
+      
+      // Also hide if privacy settings are undefined (default to hidden)
+      if (student.showEmailInProfile === undefined) {
+        email = ''
+      }
+      
+      if (student.showPhoneInProfile === undefined) {
+        phone = ''
+      }
+      
+      return {
+        _id: student._id,
+        firstName: student.firstName || '',
+        lastName: student.lastName || '',
+        fullName: `${student.firstName || ''} ${student.lastName || ''}`.trim() || 'Unknown Student',
+        email: email,
+        phone: phone,
+        userType: 'student',
+        department: student.department || 'Unknown Department',
+        currentYear: student.currentYear || null,
+        graduationYear: student.graduationYear || null,
+        linkedinUrl: student.linkedinUrl || '',
+        profilePicture: student.profilePicture || '',
+        isOnline: student.isOnline || false
+      }
+    })
 
     return NextResponse.json({
       success: true,
       students: formattedStudents
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     })
 
   } catch (error: any) {

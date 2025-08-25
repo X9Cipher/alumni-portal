@@ -48,9 +48,47 @@ export async function GET(
         // Remove sensitive information
         const { password, ...userWithoutPassword } = user
         
+        // Apply privacy settings
+        let processedUser = { ...userWithoutPassword }
+        
+        console.log('API: Privacy settings check:', {
+          showEmailInProfile: user.showEmailInProfile,
+          showPhoneInProfile: user.showPhoneInProfile,
+          originalEmail: user.email,
+          originalPhone: user.phone
+        })
+        
+        // Hide email if privacy setting is disabled
+        if (user.showEmailInProfile === false) {
+          console.log('API: Hiding email due to privacy setting')
+          processedUser.email = undefined
+        }
+        
+        // Hide phone if privacy setting is disabled
+        if (user.showPhoneInProfile === false) {
+          console.log('API: Hiding phone due to privacy setting')
+          processedUser.phone = undefined
+        }
+        
+        // Also hide if privacy settings are undefined (default to hidden)
+        if (user.showEmailInProfile === undefined) {
+          console.log('API: Hiding email due to undefined privacy setting (default to hidden)')
+          processedUser.email = undefined
+        }
+        
+        if (user.showPhoneInProfile === undefined) {
+          console.log('API: Hiding phone due to undefined privacy setting (default to hidden)')
+          processedUser.phone = undefined
+        }
+        
+        console.log('API: Final processed user:', {
+          email: processedUser.email,
+          phone: processedUser.phone
+        })
+        
         // Add computed fields
         const enrichedUser = {
-          ...userWithoutPassword,
+          ...processedUser,
           _id: user._id?.toString(), // Convert ObjectId to string
           fullName: `${user.firstName} ${user.lastName}`,
           isOnline: false, // TODO: Implement online status
@@ -62,6 +100,12 @@ export async function GET(
         return NextResponse.json({
           success: true,
           user: enrichedUser
+        }, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
         })
       } else {
         console.log('API: No user found in collection:', collectionName)

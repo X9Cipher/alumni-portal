@@ -29,12 +29,14 @@ import {
   ThumbsUp,
   Image as ImageIcon,
   Video as VideoIcon,
-  MoreHorizontal
+  MoreHorizontal,
+  Eye
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
+import { Switch } from "@/components/ui/switch"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -63,6 +65,9 @@ interface AlumniProfile {
   isApproved: boolean
   createdAt: string
   updatedAt: string
+  // Privacy settings
+  showEmailInProfile?: boolean
+  showPhoneInProfile?: boolean
 }
 
 export default function AlumniProfile() {
@@ -84,6 +89,8 @@ export default function AlumniProfile() {
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({})
   const [likesOpenForPostId, setLikesOpenForPostId] = useState<string | null>(null)
   const [likesUsers, setLikesUsers] = useState<Array<{ _id: string; firstName: string; lastName: string; userType: string; profilePicture?: string; profileImage?: string }>>([])
+  const [mediaViewer, setMediaViewer] = useState<{ postId: string; index: number } | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string>("")
   const router = useRouter()
 
   useEffect(() => {
@@ -118,6 +125,7 @@ export default function AlumniProfile() {
         const data = await response.json()
         setProfile(data.profile)
         setEditedProfile(data.profile)
+        setCurrentUserId(data.profile._id)
         // Load posts feed and filter by author
         try {
           const postsRes = await fetch('/api/posts', { credentials: 'include' })
@@ -748,6 +756,45 @@ export default function AlumniProfile() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Privacy Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="w-5 h-5" />
+                    Privacy Settings
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <label className="text-base font-medium">Show Email in Public Profile</label>
+                        <p className="text-sm text-gray-500">Allow others to see your email address in your public profile</p>
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={editedProfile.showEmailInProfile ?? false}
+                      onCheckedChange={(checked) => handleInputChange('showEmailInProfile', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <label className="text-base font-medium">Show Phone in Public Profile</label>
+                        <p className="text-sm text-gray-500">Allow others to see your phone number in your public profile</p>
+                      </div>
+                    </div>
+                    <Switch 
+                      checked={editedProfile.showPhoneInProfile ?? false}
+                      onCheckedChange={(checked) => handleInputChange('showPhoneInProfile', checked)}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="activity">
@@ -801,7 +848,7 @@ export default function AlumniProfile() {
                 {posts.length === 0 ? (
                   <div className="p-4 text-sm text-gray-600">No posts yet.</div>
                 ) : posts.map((post) => (
-                  <div key={post._id} className="p-4 border rounded-lg shadow-sm bg-white">
+                  <div key={post._id} className="p-4 border rounded-lg shadow-sm bg-white" data-post-id={post._id}>
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <div className="font-semibold">{profile.firstName} {profile.lastName}</div>
@@ -826,9 +873,9 @@ export default function AlumniProfile() {
                           <div className="flex justify-center">
                             {post.media[0].mimeType?.startsWith('image/') ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={post.media[0].dataUrl} alt="media" className="max-h-96 rounded object-contain" />
+                              <img src={post.media[0].dataUrl} alt="media" className="max-h-96 rounded object-contain cursor-pointer" onClick={() => setMediaViewer({ postId: post._id, index: 0 })} />
                             ) : (
-                              <video controls className="max-h-96 rounded">
+                              <video controls className="max-h-96 rounded cursor-pointer" onClick={() => setMediaViewer({ postId: post._id, index: 0 })}>
                                 <source src={post.media[0].dataUrl} type={post.media[0].mimeType} />
                               </video>
                             )}
@@ -839,9 +886,9 @@ export default function AlumniProfile() {
                               <div key={idx}>
                                 {m.mimeType?.startsWith('image/') ? (
                                   // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={m.dataUrl} alt="media" className="h-64 w-full object-cover rounded" />
+                                  <img src={m.dataUrl} alt="media" className="h-64 w-full object-cover rounded cursor-pointer" onClick={() => setMediaViewer({ postId: post._id, index: idx })} />
                                 ) : (
-                                  <video className="h-64 w-full object-cover rounded" controls>
+                                  <video className="h-64 w-full object-cover rounded cursor-pointer" controls onClick={() => setMediaViewer({ postId: post._id, index: idx })}>
                                     <source src={m.dataUrl} type={m.mimeType} />
                                   </video>
                                 )}
@@ -854,9 +901,9 @@ export default function AlumniProfile() {
                               <div key={idx} className="relative">
                                 {m.mimeType?.startsWith('image/') ? (
                                   // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={m.dataUrl} alt="media" className="h-40 w-full object-cover rounded" />
+                                  <img src={m.dataUrl} alt="media" className="h-40 w-full object-cover rounded cursor-pointer" onClick={() => setMediaViewer({ postId: post._id, index: idx })} />
                                 ) : (
-                                  <video className="h-40 w-full object-cover rounded">
+                                  <video className="h-40 w-full object-cover rounded cursor-pointer" onClick={() => setMediaViewer({ postId: post._id, index: idx })}>
                                     <source src={m.dataUrl} type={m.mimeType} />
                                   </video>
                                 )}
@@ -869,10 +916,22 @@ export default function AlumniProfile() {
                         )}
                       </div>
                     )}
-                    <div className="mt-3 flex items-center gap-4 text-sm text-gray-600">
+                    <div className="mt-3 flex items-center gap-4 text-sm text-gray-600 justify-end">
                       <button className="flex items-center gap-1 hover:text-[#a41a2f]" onClick={() => toggleLike(post._id)}>
-                        <ThumbsUp className="w-4 h-4" />
-                        <span className="underline-offset-2 hover:underline" onClick={(e) => { e.stopPropagation(); openLikesDialog(post) }}>{(post.likes?.length || 0)} likes</span>
+                        <ThumbsUp 
+                          className={`w-4 h-4 ${post.likes?.some((id: any) => normalizeId(id) === currentUserId) ? 'fill-current text-[#a41a2f]' : ''}`} 
+                        />
+                        <span 
+                          className={`${post.likes && post.likes.length > 0 ? 'underline-offset-2 hover:underline cursor-pointer' : ''}`} 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            if (post.likes && post.likes.length > 0) {
+                              openLikesDialog(post) 
+                            }
+                          }}
+                        >
+                          {(post.likes?.length || 0)} likes
+                        </span>
                       </button>
                       <button className="flex items-center gap-1 hover:text-[#a41a2f]" onClick={() => { const next = new Set(expandedComments); next.has(post._id) ? next.delete(post._id) : next.add(post._id); setExpandedComments(next) }}>
                         <MessageSquare className="w-4 h-4" />
@@ -936,6 +995,85 @@ export default function AlumniProfile() {
                   ))
                 )}
               </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Edit Post dialog */}
+          <Dialog open={!!editingPostId} onOpenChange={(v) => !v && setEditingPostId(null)}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Edit post</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <Textarea value={editingContent} onChange={(e) => setEditingContent(e.target.value)} rows={4} />
+                {editingMedia.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {editingMedia.map((m, idx) => (
+                      <div key={idx} className="relative">
+                        {m.mimeType.startsWith('image/') ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={m.dataUrl} alt="media" className="h-28 w-full object-cover rounded" />
+                        ) : (
+                          <video className="h-28 w-full object-cover rounded">
+                            <source src={m.dataUrl} type={m.mimeType} />
+                          </video>
+                        )}
+                        <button className="absolute -top-2 -right-2 bg-black/70 text-white rounded-full w-6 h-6" onClick={() => setEditingMedia(editingMedia.filter((_, i) => i !== idx))}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <label className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-[#a41a2f] cursor-pointer">
+                      <ImageIcon className="w-4 h-4" /> Photo
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => setEditingMedia((prev) => [...prev, { dataUrl: r.result as string, mimeType: f.type }]); r.readAsDataURL(f) }} />
+                    </label>
+                    <label className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-[#a41a2f] cursor-pointer">
+                      <VideoIcon className="w-4 h-4" /> Video
+                      <input type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => setEditingMedia((prev) => [...prev, { dataUrl: r.result as string, mimeType: f.type }]); r.readAsDataURL(f) }} />
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={() => setEditingPostId(null)}>Cancel</Button>
+                    <Button onClick={saveEdit} disabled={!editingContent.trim() && editingMedia.length === 0}>Save</Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Media Viewer Modal */}
+          <Dialog open={!!mediaViewer} onOpenChange={(v) => !v && setMediaViewer(null)}>
+            <DialogContent className="max-w-3xl">
+              {mediaViewer && (
+                <div className="relative">
+                  <Carousel className="w-full" opts={{ startIndex: mediaViewer.index }}>
+                    <CarouselContent>
+                      {(() => {
+                        const post = posts.find((p) => p._id === mediaViewer.postId) as any
+                        const media = (post?.media || []) as { dataUrl: string; mimeType: string }[]
+                        return media.map((m, idx) => (
+                          <CarouselItem key={idx}>
+                            <div className="flex items-center justify-center h-[28rem] bg-black/5 rounded">
+                              {m.mimeType.startsWith('image/') ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={m.dataUrl} alt="media" className="max-h-[26rem] object-contain" />
+                              ) : (
+                                <video controls className="max-h-[26rem]">
+                                  <source src={m.dataUrl} type={m.mimeType} />
+                                </video>
+                              )}
+                            </div>
+                          </CarouselItem>
+                        ))
+                      })()}
+                    </CarouselContent>
+                    <CarouselPrevious />
+                    <CarouselNext />
+                  </Carousel>
+                </div>
+              )}
             </DialogContent>
           </Dialog>
 

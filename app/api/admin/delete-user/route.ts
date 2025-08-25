@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { UserService } from '@/lib/services/userService'
-import { verifyToken } from '@/lib/auth'
+import { verifyToken, getCurrentSessionToken } from '@/lib/auth'
 
 export async function DELETE(request: NextRequest) {
   try {
-    // Verify admin authentication
-    const token = request.cookies.get('auth-token')?.value
+    // Verify admin authentication using proper session token
+    const token = getCurrentSessionToken(request)
 
     if (!token) {
       return NextResponse.json(

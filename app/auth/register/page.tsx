@@ -35,7 +35,7 @@ export default function RegisterPage() {
       graduationYear: "",
       department: "",
       currentCompany: "",
-      currentRole: "",
+      currentPosition: "",
       password: ""
     }
   })
@@ -346,8 +346,8 @@ export default function RegisterPage() {
                   <Input 
                     id="current-role" 
                     placeholder="Software Engineer"
-                    value={formData.alumni.currentRole}
-                    onChange={(e) => handleInputChange("alumni", "currentRole", e.target.value)}
+                    value={formData.alumni.currentPosition}
+                    onChange={(e) => handleInputChange("alumni", "currentPosition", e.target.value)}
                     disabled={loading}
                   />
                 </div>

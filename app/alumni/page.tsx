@@ -11,6 +11,7 @@ import { formatDistanceToNow } from "date-fns"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
+import NotificationBell from "@/components/notification-bell"
 
 // Backend post shape
 interface ApiComment {
@@ -44,7 +45,7 @@ interface Profile {
   firstName: string
   lastName: string
   department?: string
-  currentRole?: string
+  currentPosition?: string
   currentCompany?: string
   graduationYear?: string
   profileImage?: string
@@ -325,14 +326,16 @@ export default function AlumniHome() {
     <div className="min-h-screen">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Welcome back, {alumni.firstName}!</h1>
             <p className="text-gray-600">
-              {alumni.currentRole ? `${alumni.currentRole} at ${alumni.currentCompany || ""}` : "Update your profile to share your role"}
+              {alumni.currentPosition ? `${alumni.currentPosition} at ${alumni.currentCompany || ""}` : "Update your profile to share your role"}
             </p>
           </div>
+          
+          {/* Notification Bell */}
+          <NotificationBell userType="alumni" userId={currentUserId} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -352,7 +355,7 @@ export default function AlumniHome() {
                     {alumni.firstName} {alumni.lastName}
                   </h3>
                   <p className="text-sm text-gray-600">
-                    {alumni.currentRole} {alumni.currentCompany ? `at ${alumni.currentCompany}` : ""}
+                    {alumni.currentPosition} {alumni.currentCompany ? `at ${alumni.currentCompany}` : ""}
                   </p>
                   <Badge variant="secondary" className="mt-1">
                     {alumni.department || "Department"}
@@ -499,7 +502,7 @@ export default function AlumniHome() {
               </Card>
             ) : (
               posts.map((post) => (
-                <Card key={post._id} className="overflow-hidden">
+                <Card key={post._id} className="overflow-hidden" data-post-id={post._id}>
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       <a href={`/alumni/profile/${post.authorId || ''}`}>
@@ -521,27 +524,7 @@ export default function AlumniHome() {
                               {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                             </div>
                           </div>
-                          {/* Actions menu */}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="p-1 rounded hover:bg-gray-100">
-                                <MoreHorizontal className="w-5 h-5" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => openEditModal(post)}>Edit</DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={async () => {
-                                  if (!confirm('Delete this post?')) return
-                                  const res = await fetch(`/api/posts?action=delete&postId=${post._id}`, { method: 'PUT', credentials: 'include' })
-                                  if (res.ok) setPosts((prev) => prev.filter((p) => p._id !== post._id))
-                                }}
-                              >
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {/* Actions removed on dashboard view */}
                         </div>
                         <div className="mt-2 whitespace-pre-wrap break-words">{post.content}</div>
                         {/* Media preview: support legacy single media and new multiple media */}
@@ -562,6 +545,24 @@ export default function AlumniHome() {
                                       </video>
                                     )}
                                   </button>
+                                )
+                              }
+                              if (media.length === 2) {
+                                return (
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {media.map((m, idx) => (
+                                      <button key={idx} type="button" onClick={() => setMediaViewer({ postId: post._id, index: idx })}>
+                                        {m.mimeType?.startsWith('image/') ? (
+                                          // eslint-disable-next-line @next/next/no-img-element
+                                          <img src={m.dataUrl} alt="media" className="h-64 w-full object-cover rounded" />
+                                        ) : (
+                                          <video className="h-64 w-full object-cover rounded">
+                                            <source src={m.dataUrl} type={m.mimeType} />
+                                          </video>
+                                        )}
+                                      </button>
+                                    ))}
+                                  </div>
                                 )
                               }
                               return (
@@ -600,17 +601,21 @@ export default function AlumniHome() {
                             )}
                           </>
                         )}
-                        <div className="mt-3 flex items-center gap-4 text-sm text-gray-600 justify-start">
+                        <div className="mt-3 flex items-center gap-4 text-sm text-gray-600 justify-end">
                           <button
                             className="flex items-center gap-1 hover:text-[#a41a2f]"
                             onClick={() => toggleLike(post._id)}
                           >
-                            <ThumbsUp className="w-4 h-4" />
+                            <ThumbsUp 
+                              className={`w-4 h-4 ${post.likes?.some((id: any) => normalizeId(id) === currentUserId) ? 'fill-current text-[#a41a2f]' : ''}`} 
+                            />
                             <span
-                              className="underline-offset-2 hover:underline"
+                              className={`${post.likes && post.likes.length > 0 ? 'underline-offset-2 hover:underline cursor-pointer' : ''}`}
                               onClick={(e) => {
                                 e.stopPropagation()
-                                openLikesDialog(post)
+                                if (post.likes && post.likes.length > 0) {
+                                  openLikesDialog(post)
+                                }
                               }}
                             >
                               {(post.likes?.length || 0)} likes

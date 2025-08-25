@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { verifyToken, getCurrentSessionToken } from '@/lib/auth'
 import { JobService } from '@/lib/services/jobService'
 import { CreateJobData } from '@/lib/models/Job'
+import { NotificationService } from '@/lib/services/notificationService'
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,8 +26,8 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Job creation request received')
     
-    // Verify authentication
-    const token = request.cookies.get('auth-token')?.value
+    // Verify authentication using proper session token
+    const token = getCurrentSessionToken(request)
     console.log('Token found:', !!token)
 
     if (!token) {
@@ -101,6 +102,22 @@ export async function POST(request: NextRequest) {
 
     // Save to database
     const newJob = await JobService.createJob(jobData, postedBy)
+
+    // Send notifications to all alumni
+    if (newJob && newJob._id) {
+      try {
+        await NotificationService.notifyNewJob({
+          _id: newJob._id.toString(),
+          title,
+          company,
+          postedBy
+        })
+        console.log('Notifications sent for new job')
+      } catch (notificationError) {
+        console.error('Failed to send job notifications:', notificationError)
+        // Don't fail the job creation if notifications fail
+      }
+    }
 
     console.log('New job created:', newJob)
 

@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "node server.js",
+    "dev": "node --max-old-space-size=4096 server.js",
     "lint": "next lint",
     "start": "NODE_ENV=production node server.js",
     "migrate": "npx tsx scripts/migrate-data.ts",
     "clean-connections": "node scripts/clean-invalid-connections.js",
-    "debug-connections": "node scripts/debug-connections.js"
+    "debug-connections": "node scripts/debug-connections.js",
+    "set-privacy-defaults": "node scripts/set-default-privacy.js",
+    "fix-notification-dates": "node scripts/fix-notification-dates.js",
+    "fix-notification-links": "node scripts/fix-notification-links.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

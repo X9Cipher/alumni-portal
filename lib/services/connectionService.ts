@@ -269,7 +269,7 @@ export class ConnectionService {
             userType: '$requester.userType',
             department: '$requester.department',
             currentCompany: '$requester.currentCompany',
-            currentRole: '$requester.currentRole',
+            currentPosition: '$requester.currentPosition',
             currentYear: '$requester.currentYear',
             graduationYear: '$requester.graduationYear'
           }
@@ -411,7 +411,7 @@ export class ConnectionService {
             userType: '$requester.userType',
             department: '$requester.department',
             currentCompany: '$requester.currentCompany',
-            currentRole: '$requester.currentRole',
+            currentPosition: '$requester.currentPosition',
             currentYear: '$requester.currentYear',
             graduationYear: '$requester.graduationYear',
             avatar: '$requester.avatar',
@@ -426,7 +426,7 @@ export class ConnectionService {
             userType: '$recipient.userType',
             department: '$recipient.department',
             currentCompany: '$recipient.currentCompany',
-            currentRole: '$recipient.currentRole',
+            currentPosition: '$recipient.currentPosition',
             currentYear: '$recipient.currentYear',
             graduationYear: '$recipient.graduationYear',
             avatar: '$recipient.avatar',

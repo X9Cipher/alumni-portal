@@ -27,7 +27,6 @@ export default function CreateEvent() {
     time: '',
     location: '',
     type: 'networking',
-    maxAttendees: '',
     isPublic: true
   })
   const [loading, setLoading] = useState(false)
@@ -61,10 +60,7 @@ export default function CreateEvent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...formData,
-          maxAttendees: formData.maxAttendees ? parseInt(formData.maxAttendees) : null
-        }),
+        body: JSON.stringify(formData),
       })
 
       if (response.ok) {
@@ -141,17 +137,6 @@ export default function CreateEvent() {
                       </option>
                     ))}
                   </select>
-                </div>
-                <div>
-                  <Label htmlFor="maxAttendees">Max Attendees</Label>
-                  <Input
-                    id="maxAttendees"
-                    type="number"
-                    value={formData.maxAttendees}
-                    onChange={(e) => handleInputChange('maxAttendees', e.target.value)}
-                    placeholder="Leave empty for unlimited"
-                    min="1"
-                  />
                 </div>
               </div>
 

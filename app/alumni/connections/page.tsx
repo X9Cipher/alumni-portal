@@ -277,7 +277,7 @@ export default function AlumniConnections() {
                             {otherUser.firstName} {otherUser.lastName}
                           </h3>
                           <p className="text-gray-600 text-sm">
-                            {otherUser.currentRole || "Position not specified"}
+                            {otherUser.currentPosition || "Position not specified"}
                           </p>
                           {otherUser.currentCompany && (
                             <div className="flex items-center gap-1 text-gray-500 text-sm mt-1">

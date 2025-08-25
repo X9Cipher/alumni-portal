@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { verifyToken, getCurrentSessionToken } from '@/lib/auth'
 import { EventService } from '@/lib/services/eventService'
 import { CreateEventData } from '@/lib/models/Event'
+import { NotificationService } from '@/lib/services/notificationService'
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,8 +26,8 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Event creation request received')
     
-    // Verify authentication
-    const token = request.cookies.get('auth-token')?.value
+    // Verify authentication using proper session token
+    const token = getCurrentSessionToken(request)
     console.log('Token found:', !!token)
 
     if (!token) {
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     console.log('Request body:', body)
     
-    const { title, description, date, time, location, type, maxAttendees, isPublic } = body
+    const { title, description, date, time, location, type, maxAttendees, isPublic, organizer } = body
 
     // Validate required fields
     if (!title || !description || !date || !time || !location || !type) {
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
       isPublic: isPublic !== false // Default to true
     }
 
-    const organizer = {
+    const eventOrganizer = {
       _id: decoded.userId,
       firstName,
       lastName,
@@ -101,7 +102,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to database
-    const newEvent = await EventService.createEvent(eventData, organizer)
+    const newEvent = await EventService.createEvent(eventData, eventOrganizer)
+
+    // Send notifications to all users
+    if (newEvent && newEvent._id) {
+      try {
+        await NotificationService.notifyNewEvent({
+          _id: newEvent._id.toString(),
+          title,
+          postedBy: eventOrganizer
+        })
+        console.log('Notifications sent for new event')
+      } catch (notificationError) {
+        console.error('Failed to send event notifications:', notificationError)
+        // Don't fail the event creation if notifications fail
+      }
+    }
 
     console.log('New event created:', newEvent)
 

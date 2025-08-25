@@ -23,10 +23,12 @@ import {
   LogOut,
   Settings,
   BookOpen,
-  Award
+  Award,
+  Eye
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { Switch } from "@/components/ui/switch"
 
 interface StudentProfile {
   _id: string
@@ -50,6 +52,9 @@ interface StudentProfile {
   isApproved: boolean
   createdAt: string
   updatedAt: string
+  // Privacy settings
+  showEmailInProfile?: boolean
+  showPhoneInProfile?: boolean
 }
 
 export default function StudentProfile() {
@@ -321,11 +326,18 @@ export default function StudentProfile() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   {editing ? (
-                    <Input
-                      value={editedProfile.phone || ''}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="Phone number"
-                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={editedProfile.phone || ''}
+                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                        placeholder="Phone number"
+                      />
+                      <Switch
+                        id="show-phone"
+                        checked={editedProfile.showPhoneInProfile || false}
+                        onCheckedChange={(checked) => handleInputChange('showPhoneInProfile', checked)}
+                      />
+                    </div>
                   ) : (
                     <p className="text-gray-900">{profile.phone || 'Not provided'}</p>
                   )}
@@ -525,6 +537,45 @@ export default function StudentProfile() {
                 ) : (
                   <p className="text-gray-900">{profile.portfolioUrl || 'Not provided'}</p>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Privacy Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Privacy Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Mail className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <label className="text-base font-medium">Show Email in Public Profile</label>
+                    <p className="text-sm text-gray-500">Allow others to see your email address in your public profile</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={editedProfile.showEmailInProfile ?? false}
+                  onCheckedChange={(checked) => handleInputChange('showEmailInProfile', checked)}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Phone className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <label className="text-base font-medium">Show Phone in Public Profile</label>
+                    <p className="text-sm text-gray-500">Allow others to see your phone number in your public profile</p>
+                  </div>
+                </div>
+                <Switch 
+                  checked={editedProfile.showPhoneInProfile ?? false}
+                  onCheckedChange={(checked) => handleInputChange('showPhoneInProfile', checked)}
+                />
               </div>
             </CardContent>
           </Card>

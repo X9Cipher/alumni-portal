@@ -15,11 +15,19 @@ interface User {
   lastName: string
   email: string
   userType: 'student' | 'alumni' | 'admin'
+  graduationYear?: string
   department?: string
   currentCompany?: string
-  currentRole?: string
-  graduationYear?: number
-  currentYear?: number
+  currentPosition?: string
+  location?: string
+  profilePicture?: string
+  isApproved: boolean
+  createdAt: string
+  // Computed fields
+  isOnline?: boolean
+  profileViews?: number
+  connections?: number
+  mutualConnections?: number
 }
 
 interface UserSearchProps {
@@ -274,7 +282,7 @@ export function UserSearch({
                       <p className="text-sm text-muted-foreground">{user.email}</p>
                       {user.userType === 'alumni' && user.currentCompany && (
                         <p className="text-xs text-muted-foreground">
-                          {user.currentRole} at {user.currentCompany}
+                          {user.currentPosition} at {user.currentCompany}
                         </p>
                       )}
                     </div>

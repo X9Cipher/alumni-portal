@@ -55,6 +55,9 @@ interface Student {
   phone?: string
   createdAt: string
   lastActive?: string
+  isActive?: boolean // Added for new stats
+  graduationYear?: string // Added for new stats
+  location?: string // Added for new stats
 }
 
 export default function StudentManagement() {
@@ -64,9 +67,26 @@ export default function StudentManagement() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterStatus, setFilterStatus] = useState<'all' | 'approved' | 'pending'>('all')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [filterDepartment, setFilterDepartment] = useState<string>('all')
   const [filterYear, setFilterYear] = useState<string>('all')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [newStudent, setNewStudent] = useState<Student>({
+    _id: '',
+    email: '',
+    firstName: '',
+    lastName: '',
+    userType: 'student',
+    isApproved: false,
+    department: '',
+    studentId: '',
+    currentYear: '',
+    phone: '',
+    createdAt: '',
+    isActive: true,
+    graduationYear: '',
+    location: '',
+  })
   const router = useRouter()
 
   const departments = ['Computer Science', 'Engineering', 'Business', 'Arts', 'Science', 'Medicine']
@@ -133,7 +153,7 @@ export default function StudentManagement() {
     // Filter by status
     if (filterStatus !== 'all') {
       filtered = filtered.filter(student => 
-        filterStatus === 'approved' ? student.isApproved : !student.isApproved
+        filterStatus === 'active' ? student.isActive : !student.isActive
       )
     }
 
@@ -185,7 +205,7 @@ export default function StudentManagement() {
     }
 
     try {
-      setActionLoading(`${studentId}-delete`)
+      setActionLoading(studentId)
       
       const response = await fetch('/api/admin/delete-user', {
         method: 'DELETE',
@@ -211,13 +231,57 @@ export default function StudentManagement() {
     }
   }
 
-  const handleLogout = async () => {
+  const handleCreateStudent = async (e: React.FormEvent) => {
+    e.preventDefault()
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
-      localStorage.clear()
-      router.push('/auth/login')
+      setActionLoading('create')
+      const response = await fetch('/api/admin/create-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: newStudent.email,
+          firstName: newStudent.firstName,
+          lastName: newStudent.lastName,
+          userType: 'student',
+          isApproved: true, // Assuming new students are approved
+          department: newStudent.department,
+          studentId: newStudent.studentId,
+          currentYear: newStudent.currentYear, // This might need adjustment based on new logic
+          phone: newStudent.phone,
+          location: newStudent.location,
+          graduationYear: newStudent.graduationYear,
+        }),
+      })
+
+      if (response.ok) {
+        await fetchStudents()
+        setShowCreateModal(false)
+        setNewStudent({
+          _id: '',
+          email: '',
+          firstName: '',
+          lastName: '',
+          userType: 'student',
+          isApproved: false,
+          department: '',
+          studentId: '',
+          currentYear: '',
+          phone: '',
+          createdAt: '',
+          isActive: true,
+          graduationYear: '',
+          location: '',
+        })
+      } else {
+        const data = await response.json()
+        setError(data.error || 'Failed to create student')
+      }
     } catch (error) {
-      console.error('Logout error:', error)
+      setError('Failed to create student')
+    } finally {
+      setActionLoading(null)
     }
   }
 
@@ -236,121 +300,7 @@ export default function StudentManagement() {
   const pendingStudents = students.filter(s => !s.isApproved).length
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        {/* Sidebar Header */}
-        <div className="bg-[#a41a2f] p-4 text-white">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <Shield className="w-5 h-5 text-[#a41a2f]" />
-            </div>
-            <div>
-              <h2 className="font-semibold">Admin Panel</h2>
-              <p className="text-sm text-red-100">System Management</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar Menu */}
-        <div className="flex-1 p-4">
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-600 mb-3">Main Menu</h3>
-            <nav className="space-y-1">
-              <a href="/admin" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                <Home className="w-4 h-4" />
-                Dashboard
-              </a>
-              <a href="/admin/alumni" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                <GraduationCap className="w-4 h-4" />
-                Alumni Management
-              </a>
-              <a href="/admin/students" className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-[#a41a2f] bg-red-50 rounded-lg">
-                <Users className="w-4 h-4" />
-                Student Management
-              </a>
-              <a href="/admin/jobs" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                <Briefcase className="w-4 h-4" />
-                Job Posts
-              </a>
-              <a href="/admin/events" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                <Calendar className="w-4 h-4" />
-                Events
-              </a>
-              <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                <MessageSquare className="w-4 h-4" />
-                Messages
-              </a>
-            </nav>
-          </div>
-
-
-
-          <div>
-            <h3 className="text-sm font-semibold text-gray-600 mb-3">System</h3>
-            <nav className="space-y-1">
-              <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                <Settings className="w-4 h-4" />
-                System Settings
-              </a>
-              <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                <Shield className="w-4 h-4" />
-                Security
-              </a>
-              <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">
-                <AlertTriangle className="w-4 h-4" />
-                Alerts
-              </a>
-            </nav>
-          </div>
-        </div>
-
-        {/* Sidebar Footer */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="text-xs text-gray-500 text-center">© 2024 Admin Panel</div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Top Navigation */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 flex-1 max-w-md">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input 
-                  placeholder="Search students..." 
-                  className="pl-10 bg-gray-50 border-gray-200"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="w-5 h-5" />
-                <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 bg-[#a41a2f] text-white text-xs flex items-center justify-center">
-                  3
-                </Badge>
-              </Button>
-
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-[#a41a2f] rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-sm font-medium">Admin User</span>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
-                  Logout
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Dashboard Content */}
-        <main className="flex-1 p-6">
+    <div className="p-6">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
               {error}
@@ -362,14 +312,17 @@ export default function StudentManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold mb-2">Student Management</h1>
-                <p className="text-red-100">Manage and monitor student accounts and academic progress</p>
+            <p className="text-red-100">Manage student profiles and activities</p>
               </div>
-              <div className="flex gap-3">
-                <Button variant="secondary" className="bg-white text-[#a41a2f] hover:bg-gray-100">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="text-white border-white hover:bg-white hover:text-[#a41a2f]">
                   <Download className="w-4 h-4 mr-2" />
-                  Export Data
+              Export Students
                 </Button>
-                <Button variant="secondary" className="bg-white text-[#a41a2f] hover:bg-gray-100">
+            <Button 
+              className="bg-white text-[#a41a2f] hover:bg-gray-100"
+              onClick={() => setShowCreateModal(true)}
+            >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Student
                 </Button>
@@ -378,7 +331,7 @@ export default function StudentManagement() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -387,7 +340,7 @@ export default function StudentManagement() {
                     <p className="text-3xl font-bold text-gray-900">{students.length}</p>
                     <div className="flex items-center gap-1 mt-1">
                       <TrendingUp className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-green-600">+15% from last month</span>
+                  <span className="text-sm text-green-600">+15% this month</span>
                     </div>
                   </div>
                   <Users className="w-8 h-8 text-blue-500" />
@@ -399,11 +352,11 @@ export default function StudentManagement() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Approved</p>
-                    <p className="text-3xl font-bold text-gray-900">{approvedStudents}</p>
+                <p className="text-sm text-gray-600">Active Students</p>
+                <p className="text-3xl font-bold text-gray-900">{students.filter(s => s.isActive).length}</p>
                     <div className="flex items-center gap-1 mt-1">
                       <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-green-600">{Math.round((approvedStudents / students.length) * 100)}% approved</span>
+                  <span className="text-sm text-green-600">98% active</span>
                     </div>
                   </div>
                   <CheckCircle className="w-8 h-8 text-green-500" />
@@ -415,14 +368,17 @@ export default function StudentManagement() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Pending</p>
-                    <p className="text-3xl font-bold text-gray-900">{pendingStudents}</p>
+                <p className="text-sm text-gray-600">Current Year</p>
+                <p className="text-3xl font-bold text-gray-900">{students.filter(s => {
+                  const currentYear = new Date().getFullYear()
+                  return s.graduationYear === currentYear.toString()
+                }).length}</p>
                     <div className="flex items-center gap-1 mt-1">
-                      <Clock className="w-4 h-4 text-orange-600" />
-                      <span className="text-sm text-orange-600">Awaiting approval</span>
+                  <Calendar className="w-4 h-4 text-purple-600" />
+                  <span className="text-sm text-purple-600">Graduating soon</span>
                     </div>
                   </div>
-                  <Clock className="w-8 h-8 text-orange-500" />
+              <Calendar className="w-8 h-8 text-purple-500" />
                 </div>
               </CardContent>
             </Card>
@@ -431,146 +387,148 @@ export default function StudentManagement() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Active This Month</p>
-                    <p className="text-3xl font-bold text-gray-900">{Math.floor(students.length * 0.85)}</p>
+                <p className="text-sm text-gray-600">This Month</p>
+                <p className="text-3xl font-bold text-gray-900">{students.filter(s => {
+                  const joinDate = new Date(s.createdAt)
+                  const now = new Date()
+                  return joinDate.getMonth() === now.getMonth() && joinDate.getFullYear() === now.getFullYear()
+                }).length}</p>
                     <div className="flex items-center gap-1 mt-1">
-                      <TrendingUp className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm text-blue-600">85% activity rate</span>
+                  <Users className="w-4 h-4 text-orange-600" />
+                  <span className="text-sm text-orange-600">New registrations</span>
                     </div>
                   </div>
-                  <BookOpen className="w-8 h-8 text-purple-500" />
+              <Users className="w-8 h-8 text-orange-500" />
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Filters */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
+      {/* Filters and Search */}
+      <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium">Filters:</span>
+            <Filter className="w-4 h-4 text-gray-600" />
+            <span className="text-sm font-medium text-gray-700">Filters:</span>
                 </div>
-                
                 <select 
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm"
                   value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value as 'all' | 'approved' | 'pending')}
+            onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')}
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
                   <option value="all">All Status</option>
-                  <option value="approved">Approved</option>
-                  <option value="pending">Pending</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
                 </select>
-
                 <select 
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm"
                   value={filterDepartment}
                   onChange={(e) => setFilterDepartment(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
                 >
                   <option value="all">All Departments</option>
                   {departments.map(dept => (
                     <option key={dept} value={dept}>{dept}</option>
                   ))}
                 </select>
-
-                <select 
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                  value={filterYear}
-                  onChange={(e) => setFilterYear(e.target.value)}
-                >
-                  <option value="all">All Years</option>
-                  {years.map(year => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-
-                <div className="ml-auto text-sm text-gray-600">
+        </div>
+        <div className="text-sm text-gray-600">
                   Showing {filteredStudents.length} of {students.length} students
                 </div>
               </div>
+
+      {/* Students Directory */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900">Students Directory</h2>
+        
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+              <p>Loading students...</p>
+            </div>
+          </div>
+        ) : filteredStudents.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No students found</h3>
+              <p className="text-gray-600 mb-4">No students match your current filters.</p>
+              <Button 
+                className="bg-[#a41a2f] hover:bg-[#8a1628]"
+                onClick={() => setShowCreateModal(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Student
+              </Button>
             </CardContent>
           </Card>
-
-          {/* Students List */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">Student Directory</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {filteredStudents.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">No students found matching your criteria</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
+        ) : (
+          <div className="grid gap-6">
                   {filteredStudents.map((student) => (
-                    <div key={student._id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold">
-                            {student.firstName[0]}{student.lastName[0]}
+              <Card key={student._id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4 flex-1">
+                      <div className="w-16 h-16 bg-[#a41a2f] rounded-full flex items-center justify-center">
+                        <span className="text-white font-semibold text-lg">
+                          {student.firstName.charAt(0)}{student.lastName.charAt(0)}
                           </span>
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-lg">{student.firstName} {student.lastName}</h3>
-                            <Badge variant={student.isApproved ? 'default' : 'secondary'}>
-                              {student.isApproved ? 'Approved' : 'Pending'}
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-xl font-semibold text-gray-900">
+                            {student.firstName} {student.lastName}
+                          </h3>
+                          <Badge className={student.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                            {student.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                          <Badge variant="outline" className="text-blue-600 border-blue-200">
+                            {student.graduationYear}
                             </Badge>
+                        </div>
+                        
+                        <div className="flex items-center gap-6 text-sm text-gray-600 mb-3">
+                          <div className="flex items-center gap-2">
+                            <GraduationCap className="w-4 h-4" />
+                            <span>{student.department}</span>
                           </div>
-                          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                            <div className="flex items-center gap-1">
-                              <Mail className="w-4 h-4" />
-                              {student.email}
+                          {student.studentId && (
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4" />
+                              <span>ID: {student.studentId}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <BookOpen className="w-4 h-4" />
-                              Student ID: {student.studentId}
+                          )}
+                          {student.location && (
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4" />
+                              <span>{student.location}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Users className="w-4 h-4" />
-                              {student.department}
+                          )}
                             </div>
-                            <div className="flex items-center gap-1">
-                              <GraduationCap className="w-4 h-4" />
-                              {student.currentYear}
-                            </div>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Joined: {new Date(student.createdAt).toLocaleDateString()}
-                          </p>
+                        
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <span>Email: {student.email}</span>
+                          {student.phone && <span>• Phone: {student.phone}</span>}
+                          <span>• Joined: {new Date(student.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                    </div>
+                    
+                    <div className="flex items-center gap-2 ml-4">
                         <Button size="sm" variant="ghost">
                           <Eye className="w-4 h-4" />
                         </Button>
                         <Button size="sm" variant="ghost">
                           <Edit className="w-4 h-4" />
                         </Button>
-                        {!student.isApproved && (
                           <Button
                             size="sm"
-                            className="bg-green-600 hover:bg-green-700"
-                            onClick={() => handleApproveStudent(student._id, true)}
-                            disabled={actionLoading === `${student._id}-approve`}
-                          >
-                            {actionLoading === `${student._id}-approve` ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <CheckCircle className="w-4 h-4" />
-                            )}
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="destructive"
+                        variant="ghost" 
+                        className="text-red-600 hover:text-red-700"
                           onClick={() => handleDeleteStudent(student._id)}
-                          disabled={actionLoading === `${student._id}-delete`}
+                        disabled={actionLoading === student._id}
                         >
-                          {actionLoading === `${student._id}-delete` ? (
+                        {actionLoading === student._id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
                             <Trash2 className="w-4 h-4" />
@@ -578,13 +536,121 @@ export default function StudentManagement() {
                         </Button>
                       </div>
                     </div>
+                </CardContent>
+              </Card>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </main>
       </div>
+
+      {/* Create Student Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Add New Student</h2>
+              <Button variant="ghost" onClick={() => setShowCreateModal(false)}>
+                <XCircle className="w-6 h-6" />
+              </Button>
+            </div>
+            
+            <form onSubmit={handleCreateStudent} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                  <Input 
+                    value={newStudent.firstName} 
+                    onChange={(e) => setNewStudent({...newStudent, firstName: e.target.value})}
+                    placeholder="First name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                  <Input 
+                    value={newStudent.lastName} 
+                    onChange={(e) => setNewStudent({...newStudent, lastName: e.target.value})}
+                    placeholder="Last name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <Input 
+                    type="email"
+                    value={newStudent.email} 
+                    onChange={(e) => setNewStudent({...newStudent, email: e.target.value})}
+                    placeholder="email@example.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone (Optional)</label>
+                  <Input 
+                    value={newStudent.phone} 
+                    onChange={(e) => setNewStudent({...newStudent, phone: e.target.value})}
+                    placeholder="Phone number"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
+                  <Input 
+                    value={newStudent.studentId} 
+                    onChange={(e) => setNewStudent({...newStudent, studentId: e.target.value})}
+                    placeholder="Student ID"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                  <select 
+                    value={newStudent.department} 
+                    onChange={(e) => setNewStudent({...newStudent, department: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                  >
+                    <option value="">Select department</option>
+                    {departments.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Graduation Year</label>
+                  <select 
+                    value={newStudent.graduationYear} 
+                    onChange={(e) => setNewStudent({...newStudent, graduationYear: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    required
+                  >
+                    <option value="">Select year</option>
+                    {Array.from({ length: 6 }, (_, i) => new Date().getFullYear() + i).map(year => (
+                      <option key={year} value={year.toString()}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location (Optional)</label>
+                  <Input 
+                    value={newStudent.location} 
+                    onChange={(e) => setNewStudent({...newStudent, location: e.target.value})}
+                    placeholder="City, Country"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4 pt-4">
+                <Button type="submit" className="bg-[#a41a2f] hover:bg-[#8a1628]">
+                  Add Student
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

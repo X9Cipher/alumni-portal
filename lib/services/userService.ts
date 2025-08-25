@@ -66,6 +66,8 @@ export class UserService {
       lastName: userData.lastName,
       department: userData.department,
       isApproved: false, // All users need admin approval
+      showEmailInProfile: true, // Default to showing email
+      showPhoneInProfile: false, // Default to showing phone
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -87,7 +89,7 @@ export class UserService {
         userType: 'alumni',
         graduationYear: userData.graduationYear!,
         currentCompany: userData.currentCompany,
-        currentRole: userData.currentRole
+        currentPosition: userData.currentPosition
       } as Alumni
       collectionName = ALUMNI_COLLECTION
     }

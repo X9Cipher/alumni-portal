@@ -17,6 +17,9 @@ export interface BaseUser {
   isApproved: boolean
   createdAt: Date
   updatedAt: Date
+  // Privacy settings
+  showEmailInProfile?: boolean
+  showPhoneInProfile?: boolean
 }
 
 export interface Student extends BaseUser {
@@ -36,7 +39,7 @@ export interface Alumni extends BaseUser {
   degree?: string
   major?: string
   currentCompany?: string
-  currentRole?: string
+  currentPosition?: string
   experience?: string[]
   achievements?: string[]
   websiteUrl?: string
@@ -67,7 +70,7 @@ export interface RegisterData {
   // Alumni specific
   graduationYear?: string
   currentCompany?: string
-  currentRole?: string
+  currentPosition?: string
   // Common
   department: string
 }

@@ -53,43 +53,76 @@ export async function GET(request: NextRequest) {
           isApproved: 1,
           createdAt: 1,
           isOnline: 1,
-          profileViews: 1
+          profileViews: 1,
+          showEmailInProfile: 1,
+          showPhoneInProfile: 1
         }
       }
     ).toArray()
 
-    // Format the response
-    const formattedAlumni = alumni.map(alumni => ({
-      _id: alumni._id,
-      firstName: alumni.firstName || '',
-      lastName: alumni.lastName || '',
-      fullName: `${alumni.firstName || ''} ${alumni.lastName || ''}`.trim() || 'Unknown Alumni',
-      email: alumni.email || '',
-      phone: alumni.phone || '',
-      userType: 'alumni',
-      graduationYear: alumni.graduationYear || '',
-      degree: alumni.degree || '',
-      major: alumni.major || '',
-      currentCompany: alumni.currentCompany || '',
-      currentPosition: alumni.currentPosition || '',
-      location: alumni.location || '',
-      profilePicture: alumni.profilePicture || '',
-      bio: alumni.bio || '',
-      skills: alumni.skills || [],
-      linkedinUrl: alumni.linkedinUrl || '',
-      githubUrl: alumni.githubUrl || '',
-      portfolioUrl: alumni.portfolioUrl || '',
-      isApproved: alumni.isApproved || false,
-      createdAt: alumni.createdAt || new Date(),
-      isOnline: alumni.isOnline || false,
-      profileViews: alumni.profileViews || 0,
-      connections: 0, // Will be calculated separately if needed
-      mutualConnections: 0 // Will be calculated separately if needed
-    }))
+    // Format the response and apply privacy settings
+    const formattedAlumni = alumni.map(alumni => {
+      // Apply privacy settings
+      let email = alumni.email || ''
+      let phone = alumni.phone || ''
+      
+      // Hide email if privacy setting is disabled
+      if (alumni.showEmailInProfile === false) {
+        email = ''
+      }
+      
+      // Hide phone if privacy setting is disabled
+      if (alumni.showPhoneInProfile === false) {
+        phone = ''
+      }
+      
+      // Also hide if privacy settings are undefined (default to hidden)
+      if (alumni.showEmailInProfile === undefined) {
+        email = ''
+      }
+      
+      if (alumni.showPhoneInProfile === undefined) {
+        phone = ''
+      }
+      
+      return {
+        _id: alumni._id,
+        firstName: alumni.firstName || '',
+        lastName: alumni.lastName || '',
+        fullName: `${alumni.firstName || ''} ${alumni.lastName || ''}`.trim() || 'Unknown Alumni',
+        email: email,
+        phone: phone,
+        userType: 'alumni',
+        graduationYear: alumni.graduationYear || '',
+        degree: alumni.degree || '',
+        major: alumni.major || '',
+        currentCompany: alumni.currentCompany || '',
+        currentPosition: alumni.currentPosition || '',
+        location: alumni.location || '',
+        profilePicture: alumni.profilePicture || '',
+        bio: alumni.bio || '',
+        skills: alumni.skills || [],
+        linkedinUrl: alumni.linkedinUrl || '',
+        githubUrl: alumni.githubUrl || '',
+        portfolioUrl: alumni.portfolioUrl || '',
+        isApproved: alumni.isApproved || false,
+        createdAt: alumni.createdAt || new Date(),
+        isOnline: alumni.isOnline || false,
+        profileViews: alumni.profileViews || 0,
+        connections: 0, // Will be calculated separately if needed
+        mutualConnections: 0 // Will be calculated separately if needed
+      }
+    })
 
     return NextResponse.json({
       success: true,
       alumni: formattedAlumni
+    }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     })
 
   } catch (error: any) {

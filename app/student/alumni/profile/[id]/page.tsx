@@ -37,7 +37,6 @@ interface PublicProfile {
   department?: string
   currentCompany?: string
   currentPosition?: string
-  currentRole?: string
   location?: string
   bio?: string
   skills?: string[]
@@ -47,6 +46,8 @@ interface PublicProfile {
   githubUrl?: string
   portfolioUrl?: string
   websiteUrl?: string
+  profilePicture?: string
+  profileImage?: string
   userType: 'student' | 'alumni' | 'admin'
   isApproved: boolean
   createdAt: string
@@ -64,6 +65,7 @@ export default function StudentAlumniProfile() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [connectionStatus, setConnectionStatus] = useState<'none' | 'pending' | 'accepted' | 'loading'>('loading')
   const params = useParams()
   const router = useRouter()
   const profileId = params?.id as string
@@ -74,6 +76,30 @@ export default function StudentAlumniProfile() {
     checkAuth()
     fetchPublicProfile()
   }, [profileId])
+
+  useEffect(() => {
+    if (currentUser && profile) {
+      checkConnectionStatus()
+    }
+  }, [currentUser, profile])
+
+  const checkConnectionStatus = async () => {
+    if (!currentUser || !profile) return
+    
+    try {
+      setConnectionStatus('loading')
+      const response = await fetch(`/api/connections/status?userId=${profileId}`, { credentials: 'include' })
+      if (response.ok) {
+        const data = await response.json()
+        setConnectionStatus(data.status || 'none')
+      } else {
+        setConnectionStatus('none')
+      }
+    } catch (error) {
+      console.error('Failed to check connection status:', error)
+      setConnectionStatus('none')
+    }
+  }
 
   const checkAuth = async () => {
     try {
@@ -98,15 +124,22 @@ export default function StudentAlumniProfile() {
       if (response.ok) {
         const data = await response.json()
         console.log('StudentAlumniProfile: Profile data received:', data)
-        setProfile(data.user)
+        
+        if (data.user) {
+          const profileData = data.user
+          // Ensure required fields exist
+          profileData.fullName = `${profileData.firstName} ${profileData.lastName}`
+          setProfile(profileData)
+        } else {
+          setError("Profile not found")
+        }
       } else {
         const errorData = await response.json()
-        console.error('StudentAlumniProfile: Profile fetch error:', errorData)
-        setError(errorData.error || 'Profile not found')
+        setError(errorData.error || "Failed to load profile")
       }
     } catch (error) {
-      console.error('StudentAlumniProfile: Profile fetch exception:', error)
-      setError('Failed to fetch profile')
+      console.error('StudentAlumniProfile: Error fetching profile:', error)
+      setError("Failed to load profile")
     } finally {
       setLoading(false)
     }
@@ -119,18 +152,18 @@ export default function StudentAlumniProfile() {
       return
     }
 
-    if (profile?.userType !== 'alumni') {
-      toast.error('Students can only message alumni')
-      return
-    }
+    const messagesBase = currentUser.userType === 'alumni' ? '/alumni/messages' : '/student/messages'
 
     // Check connection status
     try {
-      const statusRes = await fetch(`/api/connections/status?userId=${profileId}`)
+      if (currentUser.userType === 'alumni') {
+        router.push(`${messagesBase}?user=${profileId}&type=${profile?.userType}`)
+        return
+      }
+      const statusRes = await fetch(`/api/connections/status?userId=${profileId}`, { credentials: 'include' })
       const statusData = statusRes.ok ? await statusRes.json() : { status: 'none' }
-
       if (statusData.status === 'accepted') {
-        router.push(`/student/messages?user=${profileId}&type=${profile?.userType}`)
+        router.push(`${messagesBase}?user=${profileId}&type=${profile?.userType}`)
         return
       }
 
@@ -185,6 +218,7 @@ export default function StudentAlumniProfile() {
         
         if (response.ok) {
           toast.success('Connection request sent successfully')
+          setConnectionStatus('pending')
         } else {
           const errorData = await response.json()
           toast.error(errorData.error || 'Failed to send connection request')
@@ -230,7 +264,7 @@ export default function StudentAlumniProfile() {
         <div className="text-center">
           <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Profile Not Found</h2>
-          <p className="text-gray-600 mb-4">The requested profile could not be found.</p>
+          <p className="text-gray-600 mb-4">The requested profile could not be loaded.</p>
           <Button onClick={() => router.back()}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Go Back
@@ -241,7 +275,8 @@ export default function StudentAlumniProfile() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-6">
         <Button 
@@ -250,958 +285,210 @@ export default function StudentAlumniProfile() {
           className="mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Alumni Directory
+            Back
         </Button>
         
-        <div className="flex items-center gap-4">
-          <Avatar className="w-20 h-20">
-            {profile.profilePicture ? (
-              <AvatarImage src={profile.profilePicture} />
-            ) : null}
-            <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl font-semibold">
-              {profile.firstName?.[0]}{profile.lastName?.[0]}
+          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
+            <div className="flex items-start gap-6">
+              {/* Profile Avatar Section */}
+              <div className="flex flex-col items-center">
+                <Avatar className="w-24 h-24">
+                  <AvatarImage src={profile.profilePicture || profile.profileImage} />
+                  <AvatarFallback className="bg-[#a41a2f] text-white text-2xl font-bold">
+                    {profile.firstName?.[0]}
+                    {profile.lastName?.[0]}
             </AvatarFallback>
           </Avatar>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900">
-              {profile.firstName} {profile.lastName}
-            </h1>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <GraduationCap className="w-3 h-3" />
-                {profile.userType === 'alumni' ? 'Alumni' : profile.userType}
-              </Badge>
-              {profile.currentCompany && (
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Building className="w-3 h-3" />
-                  {profile.currentCompany}
+                {/* Quick Stats */}
+                <div className="mt-3 flex flex-col items-center space-y-2">
+                  {profile.department && (
+                    <Badge variant="secondary" className="text-sm">
+                      {profile.department}
                 </Badge>
               )}
-            </div>
-          </div>
-          <div className="flex gap-2">
-            {/* Show only Connect when not connected; change to disabled after sending; show Message only when connected */}
-            {currentUser && currentUser.userType === 'student' && profile.userType === 'alumni' && (
-              <ConnectOrMessageControls targetUserId={profileId} />
+                  {profile.graduationYear && (
+                    <Badge variant="outline" className="text-sm">
+                      Class of {profile.graduationYear}
+                    </Badge>
+                  )}
+                </div>
+                {/* Bio under avatar */}
+                {profile.bio && (
+                  <p className="mt-4 text-center text-base text-gray-700 max-w-xs whitespace-pre-wrap">
+                    {profile.bio}
+                  </p>
+          )}
+        </div>
+
+              {/* Profile Info Section */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+                        {profile.fullName}
+                      </h1>
+                      <div className="mt-1">
+                        {profile.currentPosition && (
+                          <p className="text-lg text-gray-800">
+                            {profile.currentPosition}
+                          </p>
+                        )}
+                        {profile.currentCompany && (
+                          <p className="text-base text-gray-600">
+                            at {profile.currentCompany}
+                          </p>
+                        )}
+                </div>
+                </div>
+                    
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                      {profile.location && (
+                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-full">
+                          <MapPin className="w-4 h-4 text-[#a41a2f]" />
+                          <span>{profile.location}</span>
+                </div>
+              )}
+              {profile.degree && (
+                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-full">
+                          <GraduationCap className="w-4 h-4 text-[#a41a2f]" />
+                          <span>{profile.degree}</span>
+                </div>
+              )}
+                      {profile.major && (
+                        <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-full">
+                          <Award className="w-4 h-4 text-[#a41a2f]" />
+                          <span>{profile.major}</span>
+                </div>
+              )}
+                  </div>
+                  </div>
+                  
+                  {/* Single stateful action button */}
+                  <div className="flex">
+                    {connectionStatus === 'loading' && (
+                      <Button disabled className="bg-gray-200 text-gray-600">
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Loading...
+                      </Button>
+                    )}
+                    {connectionStatus === 'none' && (
+                      <Button onClick={handleConnect} className="bg-[#a41a2f] text-white hover:bg-[#8e182a]">
+        <Users className="w-4 h-4 mr-2" />
+        Connect
+      </Button>
+                    )}
+                    {connectionStatus === 'pending' && (
+                      <Button disabled className="bg-[#a41a2f] text-white">
+        <Users className="w-4 h-4 mr-2" />
+        Pending
+      </Button>
+                    )}
+                    {connectionStatus === 'accepted' && (
+                      <Button onClick={() => router.push(`/student/messages?user=${profileId}&type=${profile?.userType}`)} className="bg-white text-[#a41a2f] border border-[#a41a2f] hover:bg-[#a41a2f]/5">
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Message
+        </Button>
             )}
           </div>
         </div>
       </div>
+            </div>
+              {/* Inline details inside the same card */}
+              <div className="mt-8 border-t pt-8 space-y-10">
+                {/* Contact Information */}
+                <section>
+                  <h3 className="text-lg font-semibold text-[#a41a2f] mb-3">Contact Information</h3>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    {profile.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-500" />
+                        <span>{profile.email}</span>
+                      </div>
+                    )}
+                    {profile.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-500" />
+                        <span>{profile.phone}</span>
+                      </div>
+                    )}
+                    {profile.location && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-gray-500" />
+                        <span>{profile.location}</span>
+                      </div>
+                    )}
+                    {!profile.email && !profile.phone && !profile.location && (
+                      <p className="text-gray-500 italic">No contact information available</p>
+                    )}
+                  </div>
+                </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* About */}
-          {profile.bio && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  About
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">{profile.bio}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Experience */}
-          {profile.experience && profile.experience.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Briefcase className="w-5 h-5" />
-                  Experience
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {profile.experience.map((exp, index) => (
-                    <div key={index} className="border-l-2 border-blue-200 pl-4">
-                      <p className="text-gray-700">{exp}</p>
+                {/* Education */}
+                {(profile.graduationYear || profile.degree || profile.major || profile.department) && (
+                  <section>
+                    <h3 className="text-lg font-semibold text-[#a41a2f] mb-3">Education</h3>
+                    <div className="text-gray-700">
+                      {profile.degree && profile.major && (<p className="font-medium">{profile.degree} in {profile.major}</p>)}
+                      {profile.department && (<p className="text-sm text-gray-600">{profile.department}</p>)}
+                      {profile.graduationYear && (<p className="text-sm text-gray-500">Class of {profile.graduationYear}</p>)}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </section>
           )}
 
           {/* Skills */}
           {profile.skills && profile.skills.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5" />
-                  Skills
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+                  <section>
+                    <h3 className="text-lg font-semibold text-[#a41a2f] mb-3">Skills</h3>
                 <div className="flex flex-wrap gap-2">
-                  {profile.skills.map((skill, index) => (
-                    <Badge key={index} variant="secondary">
-                      {skill}
-                    </Badge>
+                      {profile.skills.map((skill, idx) => (
+                        <span key={idx} className="px-3 py-1 rounded-full bg-[#a41a2f]/10 text-[#a41a2f] text-sm">{skill}</span>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Experience */}
+                {profile.experience && profile.experience.length > 0 && (
+                  <section>
+                    <h3 className="text-lg font-semibold text-[#a41a2f] mb-3">Experience</h3>
+                    <div className="space-y-2">
+                      {profile.experience.map((exp, idx) => (
+                        <div key={idx} className="pl-4 border-l-4 border-[#a41a2f]/30 text-gray-700">{exp}</div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+                  </section>
           )}
 
           {/* Achievements */}
           {profile.achievements && profile.achievements.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5" />
-                  Achievements
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+                  <section>
+                    <h3 className="text-lg font-semibold text-[#a41a2f] mb-3">Achievements</h3>
                 <div className="space-y-2">
-                  {profile.achievements.map((achievement, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <p className="text-gray-700">{achievement}</p>
+                      {profile.achievements.map((a, idx) => (
+                        <div key={idx} className="flex items-start gap-2 text-gray-700"><Award className="w-4 h-4 text-yellow-500 mt-0.5" />{a}</div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Contact Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="w-5 h-5" />
-                Contact Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {profile.email && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-700">{profile.email}</span>
-                </div>
-              )}
-              {profile.phone && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-700">{profile.phone}</span>
-                </div>
-              )}
-              {profile.location && (
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-700">{profile.location}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Education */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="w-5 h-5" />
-                Education
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {profile.graduationYear && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-700">Class of {profile.graduationYear}</span>
-                </div>
-              )}
-              {profile.degree && (
-                <div className="text-sm">
-                  <p className="font-medium text-gray-900">{profile.degree}</p>
-                  {profile.major && (
-                    <p className="text-gray-600">in {profile.major}</p>
-                  )}
-                </div>
-              )}
-              {profile.department && (
-                <div className="text-sm text-gray-600">
-                  {profile.department}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Professional Information */}
-          {(profile.currentCompany || profile.currentPosition) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="w-5 h-5" />
-                  Professional
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {profile.currentPosition && (
-                  <div className="text-sm">
-                    <p className="font-medium text-gray-900">{profile.currentPosition}</p>
-                  </div>
-                )}
-                {profile.currentCompany && (
-                  <div className="text-sm text-gray-600">
-                    {profile.currentCompany}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  </section>
           )}
 
           {/* Social Links */}
           {(profile.linkedinUrl || profile.githubUrl || profile.portfolioUrl || profile.websiteUrl) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="w-5 h-5" />
-                  Social & Links
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {profile.linkedinUrl && (
-                  <a 
-                    href={profile.linkedinUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
-                  >
-                    <Briefcase className="w-4 h-4" />
-                    LinkedIn Profile
-                  </a>
+                  <section>
+                    <h3 className="text-lg font-semibold text-[#a41a2f] mb-3">Social & Links</h3>
+                    <div className="space-y-2 text-sm">
+                      {profile.linkedinUrl && (<a href={profile.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">LinkedIn</a>)}
+                      {profile.githubUrl && (<div><a href={profile.githubUrl} target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:underline">GitHub</a></div>)}
+                      {profile.portfolioUrl && (<div><a href={profile.portfolioUrl} target="_blank" rel="noopener noreferrer" className="text-purple-700 hover:underline">Portfolio</a></div>)}
+                      {profile.websiteUrl && (<div><a href={profile.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-green-700 hover:underline">Website</a></div>)}
+                    </div>
+                  </section>
                 )}
-                {profile.githubUrl && (
-                  <a 
-                    href={profile.githubUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-gray-600 hover:underline"
-                  >
-                    <Briefcase className="w-4 h-4" />
-                    GitHub Profile
-                  </a>
-                )}
-                {profile.portfolioUrl && (
-                  <a 
-                    href={profile.portfolioUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-purple-600 hover:underline"
-                  >
-                    <Briefcase className="w-4 h-4" />
-                    Portfolio
-                  </a>
-                )}
-                {profile.websiteUrl && (
-                  <a 
-                    href={profile.websiteUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-green-600 hover:underline"
-                  >
-                    <Globe className="w-4 h-4" />
-                    Website
-                  </a>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Inline controls component for Connect/Message behavior
-function ConnectOrMessageControls({ targetUserId }: { targetUserId: string }) {
-  const router = useRouter()
-  const [state, setState] = useState<'loading' | 'none' | 'pending' | 'connected'>('loading')
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/connections/status?userId=${targetUserId}`)
-        const data = res.ok ? await res.json() : { status: 'none' }
-        if (data.status === 'accepted') setState('connected')
-        else if (data.status === 'pending') setState('pending')
-        else setState('none')
-      } catch {
-        setState('none')
-      }
-    }
-    load()
-  }, [targetUserId])
-
-  const sendRequest = async () => {
-    const initialMessage = prompt('Add a message to your connection request (optional):')
-    if (initialMessage === null) return
-    try {
-      const res = await fetch('/api/messages/connection-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipientId: targetUserId,
-          content: initialMessage || "Hi! I'm a student and would like to connect with you.",
-          messageType: 'text'
-        })
-      })
-      if (res.ok || res.status === 409) {
-        // 409 means already sent; treat as pending
-        setState('pending')
-        toast.success('Connection request sent')
-      } else {
-        const err = await res.json()
-        toast.error(err.error || 'Failed to send request')
-      }
-    } catch {
-      toast.error('Failed to send request')
-    }
-  }
-
-  if (state === 'loading') {
-    return (
-      <Button disabled>
-        <Users className="w-4 h-4 mr-2" />
-        Connect
-      </Button>
-    )
-  }
-
-  if (state === 'connected') {
-    return (
-      <Button variant="outline" onClick={() => router.push(`/student/messages?user=${targetUserId}&type=alumni`)}>
-        <MessageCircle className="w-4 h-4 mr-2" />
-        Message
-      </Button>
-    )
-  }
-
-  if (state === 'pending') {
-    return (
-      <Button disabled className="bg-gray-300 hover:bg-gray-300 text-gray-600">
-        <Users className="w-4 h-4 mr-2" />
-        Pending
-      </Button>
-    )
-  }
-
-  return (
-    <Button onClick={sendRequest} className="bg-[#a41a2f] hover:bg-red-700">
-      <Users className="w-4 h-4 mr-2" />
-      Connect
-    </Button>
-  )
-}
-
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Calendar, 
-  GraduationCap, 
-  Building, 
-  Loader2,
-  MessageCircle,
-  Globe,
-  Briefcase,
-  Award,
-  Users,
-  Eye,
-  ArrowLeft
-} from "lucide-react"
-import { useParams, useRouter } from "next/navigation"
-import { toast } from "sonner"
-
-interface PublicProfile {
-  _id: string
-  firstName: string
-  lastName: string
-  email: string
-  phone?: string
-  graduationYear?: string
-  degree?: string
-  major?: string
-  department?: string
-  currentCompany?: string
-  currentPosition?: string
-  currentRole?: string
-  location?: string
-  bio?: string
-  skills?: string[]
-  experience?: string[]
-  achievements?: string[]
-  linkedinUrl?: string
-  githubUrl?: string
-  portfolioUrl?: string
-  websiteUrl?: string
-  userType: 'student' | 'alumni' | 'admin'
-  isApproved: boolean
-  createdAt: string
-  updatedAt: string
-  // Computed fields
-  isOnline?: boolean
-  profileViews?: number
-  connections?: number
-  mutualConnections?: number
-  fullName?: string
-}
-
-export default function StudentAlumniProfile() {
-  const [profile, setProfile] = useState<PublicProfile | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
-  const [currentUser, setCurrentUser] = useState<any>(null)
-  const params = useParams()
-  const router = useRouter()
-  const profileId = params?.id as string
-
-  useEffect(() => {
-    console.log('StudentAlumniProfile: Component mounted with ID:', profileId)
-    console.log('StudentAlumniProfile: ID type:', typeof profileId)
-    checkAuth()
-    fetchPublicProfile()
-  }, [profileId])
-
-  const checkAuth = async () => {
-    try {
-      const response = await fetch('/api/auth/verify')
-      if (response.ok) {
-        const data = await response.json()
-        setCurrentUser(data.user)
-      }
-    } catch (error) {
-      // User not authenticated, but can still view public profile
-    }
-  }
-
-  const fetchPublicProfile = async () => {
-    try {
-      setLoading(true)
-      setError("")
-      
-      console.log('StudentAlumniProfile: Fetching profile for ID:', profileId)
-      const response = await fetch(`/api/users/${profileId}`)
-      
-      if (response.ok) {
-        const data = await response.json()
-        console.log('StudentAlumniProfile: Profile data received:', data)
-        setProfile(data.user)
-      } else {
-        const errorData = await response.json()
-        console.error('StudentAlumniProfile: Profile fetch error:', errorData)
-        setError(errorData.error || 'Profile not found')
-      }
-    } catch (error) {
-      console.error('StudentAlumniProfile: Profile fetch exception:', error)
-      setError('Failed to fetch profile')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleMessage = async () => {
-    if (!currentUser) {
-      toast.error('Please login to send messages')
-      router.push('/auth/login')
-      return
-    }
-
-    if (profile?.userType !== 'alumni') {
-      toast.error('Students can only message alumni')
-      return
-    }
-
-    // Check connection status
-    try {
-      const statusRes = await fetch(`/api/connections/status?userId=${profileId}`)
-      const statusData = statusRes.ok ? await statusRes.json() : { status: 'none' }
-
-      if (statusData.status === 'accepted') {
-        router.push(`/student/messages?user=${profileId}&type=${profile?.userType}`)
-        return
-      }
-
-      // Not connected: InMail-like prompt and request
-      const initialMessage = prompt("Add a message to start the conversation (optional):")
-      if (initialMessage === null) return
-
-      const req = await fetch('/api/messages/connection-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipientId: profileId,
-          content: (initialMessage || "Hi! I'd like to connect and learn from your experience."),
-          messageType: 'text'
-        })
-      })
-
-      if (req.ok) {
-        toast.success("Your message was sent with a connection request. You'll be able to chat after it's accepted.")
-      } else {
-        const err = await req.json()
-        toast.error(err.error || 'Failed to send request')
-      }
-    } catch (e) {
-      toast.error('Failed to initiate message')
-    }
-  }
-
-  const handleConnect = async () => {
-    if (!currentUser) {
-      toast.error('Please login to send connection requests')
-      router.push('/auth/login')
-      return
-    }
-
-    // For students, they need to send connection requests to alumni
-    if (currentUser.userType === 'student' && profile?.userType === 'alumni') {
-      // Prompt for initial message
-      const initialMessage = prompt("Add a message to your connection request (optional):")
-      if (initialMessage === null) return // User cancelled
-
-      try {
-        const response = await fetch('/api/messages/connection-request', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            recipientId: profileId, 
-            content: initialMessage || "Hi! I'm a student and would like to connect with you.",
-            messageType: 'text'
-          })
-        })
-        
-        if (response.ok) {
-          toast.success('Connection request sent successfully')
-        } else {
-          const errorData = await response.json()
-          toast.error(errorData.error || 'Failed to send connection request')
-        }
-      } catch (error) {
-        toast.error('Failed to send connection request')
-      }
-    } else {
-      toast.error('Invalid connection request')
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-          <p>Loading profile...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Profile Not Found</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <Button onClick={() => router.back()}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Go Back
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!profile) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Profile Not Found</h2>
-          <p className="text-gray-600 mb-4">The requested profile could not be found.</p>
-          <Button onClick={() => router.back()}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Go Back
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="mb-6">
-        <Button 
-          variant="ghost" 
-          onClick={() => router.back()}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Alumni Directory
-        </Button>
-        
-        <div className="flex items-center gap-4">
-          <Avatar className="w-20 h-20">
-            {profile.profilePicture ? (
-              <AvatarImage src={profile.profilePicture} />
-            ) : null}
-            <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl font-semibold">
-              {profile.firstName?.[0]}{profile.lastName?.[0]}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900">
-              {profile.firstName} {profile.lastName}
-            </h1>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <GraduationCap className="w-3 h-3" />
-                {profile.userType === 'alumni' ? 'Alumni' : profile.userType}
-              </Badge>
-              {profile.currentCompany && (
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Building className="w-3 h-3" />
-                  {profile.currentCompany}
-                </Badge>
-              )}
+              </div>
             </div>
           </div>
-          <div className="flex gap-2">
-            {/* Show only Connect when not connected; change to disabled after sending; show Message only when connected */}
-            {currentUser && currentUser.userType === 'student' && profile.userType === 'alumni' && (
-              <ConnectOrMessageControls targetUserId={profileId} />
-            )}
-          </div>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* About */}
-          {profile.bio && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  About
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">{profile.bio}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Experience */}
-          {profile.experience && profile.experience.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Briefcase className="w-5 h-5" />
-                  Experience
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {profile.experience.map((exp, index) => (
-                    <div key={index} className="border-l-2 border-blue-200 pl-4">
-                      <p className="text-gray-700">{exp}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Skills */}
-          {profile.skills && profile.skills.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5" />
-                  Skills
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {profile.skills.map((skill, index) => (
-                    <Badge key={index} variant="secondary">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Achievements */}
-          {profile.achievements && profile.achievements.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="w-5 h-5" />
-                  Achievements
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {profile.achievements.map((achievement, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <p className="text-gray-700">{achievement}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Contact Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="w-5 h-5" />
-                Contact Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {profile.email && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-700">{profile.email}</span>
-                </div>
-              )}
-              {profile.phone && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-700">{profile.phone}</span>
-                </div>
-              )}
-              {profile.location && (
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-700">{profile.location}</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Education */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <GraduationCap className="w-5 h-5" />
-                Education
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {profile.graduationYear && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-700">Class of {profile.graduationYear}</span>
-                </div>
-              )}
-              {profile.degree && (
-                <div className="text-sm">
-                  <p className="font-medium text-gray-900">{profile.degree}</p>
-                  {profile.major && (
-                    <p className="text-gray-600">in {profile.major}</p>
-                  )}
-                </div>
-              )}
-              {profile.department && (
-                <div className="text-sm text-gray-600">
-                  {profile.department}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Professional Information */}
-          {(profile.currentCompany || profile.currentPosition) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building className="w-5 h-5" />
-                  Professional
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {profile.currentPosition && (
-                  <div className="text-sm">
-                    <p className="font-medium text-gray-900">{profile.currentPosition}</p>
-                  </div>
-                )}
-                {profile.currentCompany && (
-                  <div className="text-sm text-gray-600">
-                    {profile.currentCompany}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Social Links */}
-          {(profile.linkedinUrl || profile.githubUrl || profile.portfolioUrl || profile.websiteUrl) && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="w-5 h-5" />
-                  Social & Links
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {profile.linkedinUrl && (
-                  <a 
-                    href={profile.linkedinUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
-                  >
-                    <Briefcase className="w-4 h-4" />
-                    LinkedIn Profile
-                  </a>
-                )}
-                {profile.githubUrl && (
-                  <a 
-                    href={profile.githubUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-gray-600 hover:underline"
-                  >
-                    <Briefcase className="w-4 h-4" />
-                    GitHub Profile
-                  </a>
-                )}
-                {profile.portfolioUrl && (
-                  <a 
-                    href={profile.portfolioUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-purple-600 hover:underline"
-                  >
-                    <Briefcase className="w-4 h-4" />
-                    Portfolio
-                  </a>
-                )}
-                {profile.websiteUrl && (
-                  <a 
-                    href={profile.websiteUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-green-600 hover:underline"
-                  >
-                    <Globe className="w-4 h-4" />
-                    Website
-                  </a>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-    </div>
+    
   )
 }
-
-// Inline controls component for Connect/Message behavior
-function ConnectOrMessageControls({ targetUserId }: { targetUserId: string }) {
-  const router = useRouter()
-  const [state, setState] = useState<'loading' | 'none' | 'pending' | 'connected'>('loading')
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/connections/status?userId=${targetUserId}`)
-        const data = res.ok ? await res.json() : { status: 'none' }
-        if (data.status === 'accepted') setState('connected')
-        else if (data.status === 'pending') setState('pending')
-        else setState('none')
-      } catch {
-        setState('none')
-      }
-    }
-    load()
-  }, [targetUserId])
-
-  const sendRequest = async () => {
-    const initialMessage = prompt('Add a message to your connection request (optional):')
-    if (initialMessage === null) return
-    try {
-      const res = await fetch('/api/messages/connection-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipientId: targetUserId,
-          content: initialMessage || "Hi! I'm a student and would like to connect with you.",
-          messageType: 'text'
-        })
-      })
-      if (res.ok || res.status === 409) {
-        // 409 means already sent; treat as pending
-        setState('pending')
-        toast.success('Connection request sent')
-      } else {
-        const err = await res.json()
-        toast.error(err.error || 'Failed to send request')
-      }
-    } catch {
-      toast.error('Failed to send request')
-    }
-  }
-
-  if (state === 'loading') {
-    return (
-      <Button disabled>
-        <Users className="w-4 h-4 mr-2" />
-        Connect
-      </Button>
-    )
-  }
-
-  if (state === 'connected') {
-    return (
-      <Button variant="outline" onClick={() => router.push(`/student/messages?user=${targetUserId}&type=alumni`)}>
-        <MessageCircle className="w-4 h-4 mr-2" />
-        Message
-      </Button>
-    )
-  }
-
-  if (state === 'pending') {
-    return (
-      <Button disabled className="bg-gray-300 hover:bg-gray-300 text-gray-600">
-        <Users className="w-4 h-4 mr-2" />
-        Pending
-      </Button>
-    )
-  }
-
-  return (
-    <Button onClick={sendRequest} className="bg-[#a41a2f] hover:bg-red-700">
-      <Users className="w-4 h-4 mr-2" />
-      Connect
-    </Button>
-  )
-}
-
-

@@ -38,7 +38,7 @@ interface ExtendedUser {
   userType?: 'student' | 'alumni' | 'admin'
   department?: string
   currentCompany?: string
-  currentRole?: string
+  currentPosition?: string
   graduationYear?: number
   currentYear?: number
   linkedinUrl?: string

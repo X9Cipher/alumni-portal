@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ConnectionService } from '@/lib/services/connectionService'
 import { getCurrentSessionToken, verifyToken } from '@/lib/auth'
+import { NotificationService } from '@/lib/services/notificationService'
 
 export async function GET(request: NextRequest) {
   try {
@@ -162,6 +163,40 @@ export async function PUT(request: NextRequest) {
         { error: 'Connection not found' },
         { status: 404 }
       )
+    }
+
+    // Send notification if connection is accepted
+    if (status === 'accepted' && connection) {
+      try {
+        // Determine who is the student (recipient) and who is the alumni (requester)
+        let studentId: string
+        let alumniId: string
+        let alumniFirstName: string
+        let alumniLastName: string
+
+        if (connection.requesterType === 'student') {
+          studentId = connection.requesterId.toString()
+          alumniId = connection.recipientId.toString()
+          alumniFirstName = connection.recipient?.firstName || 'Alumni'
+          alumniLastName = connection.recipient?.lastName || 'User'
+        } else {
+          studentId = connection.recipientId.toString()
+          alumniId = connection.requesterId.toString()
+          alumniFirstName = connection.requester?.firstName || 'Alumni'
+          alumniLastName = connection.requester?.lastName || 'User'
+        }
+
+        await NotificationService.notifyConnectionAccepted({
+          studentId,
+          alumniId,
+          alumniFirstName,
+          alumniLastName
+        })
+        console.log('Connection acceptance notification sent')
+      } catch (notificationError) {
+        console.error('Failed to send connection notification:', notificationError)
+        // Don't fail the connection update if notifications fail
+      }
     }
 
     return NextResponse.json({

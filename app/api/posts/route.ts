@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentSessionToken, verifyToken } from '@/lib/auth'
 import { PostService } from '@/lib/services/postService'
+import { NotificationService } from '@/lib/services/notificationService'
+import { getDatabase } from '@/lib/mongodb'
+import { ObjectId } from 'mongodb'
 
 export async function GET() {
   try {
@@ -56,6 +59,53 @@ export async function PUT(request: NextRequest) {
 
     if (action === 'like') {
       const result = await PostService.toggleLike(postId, decoded.userId)
+      
+      // Send notification if like was added (not removed)
+      if (result.liked) {
+        try {
+          console.log('Attempting to send like notification for post:', postId)
+          console.log('Like result:', result)
+          
+          // Get post information directly from database
+          try {
+            const db = await getDatabase()
+            const post = await db.collection('posts').findOne({ _id: new ObjectId(postId) })
+            console.log('Found post from database for like:', post)
+            
+            if (post && post.authorId && post.authorId.toString() !== decoded.userId) {
+              console.log('Sending like notification to author:', post.authorId, 'authorType:', post.authorType)
+              await NotificationService.notifyPostLike(
+                {
+                  _id: postId,
+                  authorId: post.authorId,
+                  authorType: post.authorType,
+                  content: post.content
+                },
+                {
+                  _id: decoded.userId,
+                  firstName: decoded.firstName || 'User',
+                  lastName: decoded.lastName || 'User',
+                  userType: decoded.userType
+                }
+              )
+              console.log('Like notification sent successfully')
+            } else {
+              console.log('Skipping like notification - post data missing or same user:', {
+                hasPost: !!post,
+                authorId: post?.authorId,
+                currentUserId: decoded.userId,
+                authorType: post?.authorType
+              })
+            }
+          } catch (dbError) {
+            console.error('Failed to get post from database for like:', dbError)
+          }
+        } catch (notificationError) {
+          console.error('Failed to send like notification:', notificationError)
+          // Don't fail the like action if notifications fail
+        }
+      }
+      
       return NextResponse.json({ success: true, ...result })
     }
     if (action === 'comment') {
@@ -67,6 +117,54 @@ export async function PUT(request: NextRequest) {
         firstName: decoded.firstName,
         lastName: decoded.lastName
       }, body.content)
+      
+      // Send notification for new comment
+      try {
+        console.log('Attempting to send comment notification for post:', postId)
+        console.log('Comment result:', result)
+        
+        // Get post information directly from database
+        try {
+          const db = await getDatabase()
+          const post = await db.collection('posts').findOne({ _id: new ObjectId(postId) })
+          console.log('Found post from database:', post)
+          
+          if (post && post.authorId && post.authorId.toString() !== decoded.userId) {
+            console.log('Sending notification to author:', post.authorId, 'authorType:', post.authorType)
+            await NotificationService.notifyPostComment(
+              {
+                _id: postId,
+                authorId: post.authorId,
+                authorType: post.authorType,
+                content: post.content
+              },
+              {
+                content: body.content,
+                author: {
+                  _id: decoded.userId,
+                  firstName: decoded.firstName || 'User',
+                  lastName: decoded.lastName || 'User',
+                  userType: decoded.userType
+                }
+              }
+            )
+            console.log('Comment notification sent successfully')
+          } else {
+            console.log('Skipping notification - post data missing or same user:', {
+              hasPost: !!post,
+              authorId: post?.authorId,
+              currentUserId: decoded.userId,
+              authorType: post?.authorType
+            })
+          }
+        } catch (dbError) {
+          console.error('Failed to get post from database:', dbError)
+        }
+      } catch (notificationError) {
+        console.error('Failed to send comment notification:', notificationError)
+        // Don't fail the comment action if notifications fail
+      }
+      
       return NextResponse.json({ success: true, ...result })
     }
 

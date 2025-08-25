@@ -381,7 +381,7 @@ export default function Messages() {
                           <div>
                             <h3 className="font-semibold">Sarah Mitchell</h3>
                             <div className="flex items-center gap-2">
-                              <p className="text-sm text-gray-500">Senior Software Engineer at Google</p>
+                              <p className="text-sm text-gray-500">Software Engineer</p>
                               <Badge variant="outline" className="text-xs">
                                 Alumni
                               </Badge>

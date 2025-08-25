@@ -144,7 +144,7 @@ export default function AlumniEventsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Alumni Events</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Events</h1>
           <p className="text-gray-600">Discover networking events, workshops, and social gatherings</p>
         </div>
         <div className="flex gap-2"></div>
@@ -215,7 +215,6 @@ export default function AlumniEventsPage() {
                           <div className="flex items-center gap-1"><Calendar className="w-4 h-4" />{formatDate(event.date)}</div>
                           <div className="flex items-center gap-1"><Clock className="w-4 h-4" />{formatTime(event.time)}</div>
                           <div className="flex items-center gap-1"><MapPin className="w-4 h-4" />{event.location}</div>
-                          <div className="flex items-center gap-1"><Users className="w-4 h-4" />{event.currentAttendees}{event.maxAttendees && `/${event.maxAttendees}`} attendees</div>
                         </div>
                         <p className="text-gray-700 mb-3">{event.description}</p>
                       </div>
@@ -225,20 +224,6 @@ export default function AlumniEventsPage() {
                         ) : (
                           <Badge variant="secondary">Past</Badge>
                         )}
-                      </div>
-                    </div>
-
-                    <div className="bg-green-50 rounded-lg p-4 mb-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-8 h-8">
-                          <AvatarFallback className="bg-green-600 text-white text-xs">
-                            {event.organizer.firstName[0]}{event.organizer.lastName[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-semibold text-green-800">Organized by {event.organizer.firstName} {event.organizer.lastName}</p>
-                          <p className="text-xs text-green-600">{event.organizer.userType === 'admin' ? 'College Administration' : 'Alumni'}</p>
-                        </div>
                       </div>
                     </div>
 

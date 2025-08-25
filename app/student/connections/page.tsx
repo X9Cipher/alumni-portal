@@ -54,11 +54,11 @@ export default function StudentConnections() {
       setLoading(true)
       
       // Load accepted connections
-      const acceptedRes = await fetch('/api/connections?type=accepted&withUserInfo=true')
+      const acceptedRes = await fetch('/api/connections?type=accepted&withUserInfo=true', { credentials: 'include' })
       const acceptedData = acceptedRes.ok ? await acceptedRes.json() : { connections: [] }
       
       // Load pending connections (both directions)
-      const pendingRes = await fetch('/api/connections?type=pending&withUserInfo=true')
+      const pendingRes = await fetch('/api/connections?type=pending&withUserInfo=true', { credentials: 'include' })
       const pendingData = pendingRes.ok ? await pendingRes.json() : { connections: [] }
       
       // Outgoing pending: requests the student has sent to alumni

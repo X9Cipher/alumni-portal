@@ -204,7 +204,7 @@ export default function StudentEvents() {
     <div className="space-y-6">
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Alumni Events</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Events And Workshops</h1>
           <p className="text-gray-600">Discover networking events, workshops, and social gatherings</p>
         </div>
         <div className="flex gap-2"></div>
@@ -291,11 +291,6 @@ export default function StudentEvents() {
                           <div className="flex items-center gap-1">
                             <MapPin className="w-4 h-4" />
                             {event.location}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
-                            {event.currentAttendees}
-                            {event.maxAttendees && `/${event.maxAttendees}`} attendees
                           </div>
                         </div>
                         <p className="text-gray-700 mb-3">{event.description}</p>

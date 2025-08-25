@@ -10,6 +10,9 @@ interface User {
   company?: string
   title?: string
   sessionId?: string
+  // Privacy settings
+  showEmailInProfile?: boolean
+  showPhoneInProfile?: boolean
 }
 
 interface UseAuthReturn {

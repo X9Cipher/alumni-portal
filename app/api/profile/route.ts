@@ -44,6 +44,13 @@ export async function GET(request: NextRequest) {
 
     // Remove password from response
     const { password, ...profileWithoutPassword } = userProfile
+    
+    console.log('Profile API GET: User profile data:', {
+      _id: profileWithoutPassword._id,
+      email: profileWithoutPassword.email,
+      showEmailInProfile: profileWithoutPassword.showEmailInProfile,
+      showPhoneInProfile: profileWithoutPassword.showPhoneInProfile
+    })
 
     return NextResponse.json({
       success: true,
@@ -84,7 +91,19 @@ export async function PUT(request: NextRequest) {
 
     // Remove sensitive fields that shouldn't be updated via this endpoint
     const { password, _id, userType, isApproved, createdAt, updatedAt, ...allowedUpdates } = updateData
-    console.log('Allowed updates:', allowedUpdates)
+    
+    // Explicitly allow privacy settings
+    const finalUpdates = {
+      ...allowedUpdates,
+      showEmailInProfile: updateData.showEmailInProfile,
+      showPhoneInProfile: updateData.showPhoneInProfile
+    }
+    
+    console.log('Profile API: Privacy settings in updateData:', {
+      showEmailInProfile: updateData.showEmailInProfile,
+      showPhoneInProfile: updateData.showPhoneInProfile
+    })
+    console.log('Profile API: Final updates being sent to UserService:', finalUpdates)
     console.log('User type:', decoded.userType)
     console.log('User ID:', decoded.userId)
 
@@ -92,10 +111,10 @@ export async function PUT(request: NextRequest) {
     let updatedProfile
     if (decoded.userType === 'student') {
       console.log('Updating student profile...')
-      updatedProfile = await UserService.updateStudent(decoded.userId, allowedUpdates)
+      updatedProfile = await UserService.updateStudent(decoded.userId, finalUpdates)
     } else if (decoded.userType === 'alumni') {
       console.log('Updating alumni profile...')
-      updatedProfile = await UserService.updateAlumni(decoded.userId, allowedUpdates)
+      updatedProfile = await UserService.updateAlumni(decoded.userId, finalUpdates)
     } else {
       return NextResponse.json(
         { error: 'Profile updates not supported for this user type' },
