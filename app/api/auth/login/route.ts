@@ -15,6 +15,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if user exists first to return a clearer error
+    const existing = await UserService.getUserByEmail(body.email)
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Not registered' },
+        { status: 404 }
+      )
+    }
+
     // Authenticate user
     const user = await UserService.authenticateUser(body)
     

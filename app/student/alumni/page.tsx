@@ -339,7 +339,7 @@ export default function StudentAlumniDirectory() {
   const isConnectionRequestPending = (userId: string) => pendingRequests.has(userId)
 
   // Get unique values for filters
-  const graduationYears = [...new Set(alumni.map(person => person.graduationYear))]
+  const graduationYears = [...new Set(alumni.map(person => person.graduationYear).filter((year) => year && year.trim() !== ''))]
     .sort((a, b) => parseInt(b) - parseInt(a))
 
   const majors = [...new Set(alumni.map(person => person.major).filter(major => major && major.trim() !== ''))]

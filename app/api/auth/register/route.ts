@@ -6,29 +6,12 @@ export async function POST(request: NextRequest) {
   try {
     const body: RegisterData = await request.json()
     
-    // Validate required fields
-    if (!body.email || !body.password || !body.firstName || !body.lastName || !body.userType || !body.department) {
+    // Validate required fields (minimal)
+    if (!body.email || !body.password || !body.userType) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       )
-    }
-
-    // Validate user type specific fields
-    if (body.userType === 'student') {
-      if (!body.studentId || !body.currentYear) {
-        return NextResponse.json(
-          { error: 'Student ID and current year are required for students' },
-          { status: 400 }
-        )
-      }
-    } else if (body.userType === 'alumni') {
-      if (!body.graduationYear) {
-        return NextResponse.json(
-          { error: 'Graduation year is required for alumni' },
-          { status: 400 }
-        )
-      }
     }
 
     // Validate email format

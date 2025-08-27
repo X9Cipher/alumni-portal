@@ -17,7 +17,8 @@ import {
   TrendingUp,
   Eye,
   UserPlus,
-  ThumbsUp
+  ThumbsUp,
+  Settings
 } from "lucide-react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
@@ -168,9 +169,15 @@ export default function StudentDashboard() {
                   <a href="/student/profile" className="mt-3 w-full">
                     <Button variant="outline" className="w-full">View Profile</Button>
                   </a>
-            </div>
-          </CardContent>
-        </Card>
+                  <a href="/student/settings" className="mt-2 w-full">
+                    <Button variant="ghost" className="w-full text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </Button>
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Quick Stats */}
             <Card>
@@ -197,7 +204,67 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
 
-            {/* Recent Joiners */}
+        {/* Alumni Directory Card */}
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Alumni Directory</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-gray-600">
+              Browse and connect with alumni from your department, graduation year, or company of interest.
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Connections Card */}
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Connections</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-gray-600">
+              Manage your alumni connections and build your professional network for future opportunities.
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Job Opportunities Card */}
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Job Opportunities</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-gray-600">
+              Discover internships and job opportunities shared by alumni and partner companies.
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Events Card */}
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Events & Workshops</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-gray-600">
+              Attend alumni events, workshops, and networking sessions to grow your skills and connections.
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Messages Card */}
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Messages</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-gray-600">
+              Communicate with your alumni connections through direct messaging and group conversations.
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Joiners */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Recent Joiners</CardTitle>

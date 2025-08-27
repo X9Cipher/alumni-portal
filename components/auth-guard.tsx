@@ -16,22 +16,29 @@ export function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
   const router = useRouter()
 
   useEffect(() => {
-    const checkAuth = () => {
-      const isAuthenticated = localStorage.getItem("isAuthenticated")
-      const userType = localStorage.getItem("userType")
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/verify')
+        
+        if (!response.ok) {
+          router.push("/auth/login")
+          return
+        }
+        
+        const data = await response.json()
+        const userType = data.user.userType
 
-      if (!isAuthenticated || !userType) {
+        if (!userType || !allowedRoles.includes(userType)) {
+          router.push("/auth/login")
+          return
+        }
+
+        setIsAuthorized(true)
+        setIsLoading(false)
+      } catch (error) {
+        console.error('Auth check error:', error)
         router.push("/auth/login")
-        return
       }
-
-      if (!allowedRoles.includes(userType)) {
-        router.push("/auth/login")
-        return
-      }
-
-      setIsAuthorized(true)
-      setIsLoading(false)
     }
 
     checkAuth()

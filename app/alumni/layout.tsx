@@ -1,7 +1,15 @@
-"use client"
+import type React from "react"
+import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "../globals.css"
+import { AlumniLayoutWrapper } from "@/components/alumni-layout-wrapper"
 
-import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarProvider } from "@/components/ui/sidebar"
+const inter = Inter({ subsets: ["latin"] })
+
+export const metadata: Metadata = {
+  title: "Alumni Portal - Alumni Network",
+  description: "Connect with students and share opportunities",
+}
 
 export default function AlumniLayout({
   children,
@@ -9,15 +17,12 @@ export default function AlumniLayout({
   children: React.ReactNode
 }) {
   return (
-    <SidebarProvider>
-      <div className="flex h-screen w-full bg-gray-50 overflow-hidden">
-        <AppSidebar />
-        <main className="flex-1 min-w-0 overflow-y-auto">
-          <div className="w-full px-6 py-8">
-            {children}
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        <AlumniLayoutWrapper>
+          {children}
+        </AlumniLayoutWrapper>
+      </body>
+    </html>
   )
 }

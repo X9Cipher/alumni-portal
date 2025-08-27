@@ -206,7 +206,7 @@ export class NotificationService {
         userFirstName: likedBy.firstName,
         userLastName: likedBy.lastName,
         userType: likedBy.userType as 'student' | 'alumni' | 'admin',
-        link: postData.authorType === 'alumni' ? `/alumni?postId=${postData._id}` : `/student?postId=${postData._id}` // Navigate to post with ID
+        link: postData.authorType === 'alumni' ? `/alumni/posts/${postData._id}` : `/student/posts/${postData._id}`
       }
 
       return await this.createNotification(notification)
@@ -247,7 +247,7 @@ export class NotificationService {
         userFirstName: commentData.author.firstName,
         userLastName: commentData.author.lastName,
         userType: commentData.author.userType as 'student' | 'alumni' | 'admin',
-        link: postData.authorType === 'alumni' ? `/alumni?postId=${postData._id}` : `/student?postId=${postData._id}` // Navigate to post with ID
+        link: postData.authorType === 'alumni' ? `/alumni/posts/${postData._id}` : `/student/posts/${postData._id}`
       }
 
       return await this.createNotification(notification)

@@ -7,28 +7,39 @@ export default function HomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem("isAuthenticated")
-    const userType = localStorage.getItem("userType")
+    const checkAuthAndRedirect = async () => {
+      try {
+        const response = await fetch('/api/auth/verify')
+        
+        if (!response.ok) {
+          router.push("/auth/login")
+          return
+        }
+        
+        const data = await response.json()
+        const userType = data.user.userType
 
-    if (!isAuthenticated) {
-      router.push("/auth/login")
-      return
-    }
-
-    // Redirect based on user type
-    switch (userType) {
-      case "admin":
-        router.push("/admin")
-        break
-      case "student":
-        router.push("/student")
-        break
-      case "alumni":
-        router.push("/alumni")
-        break
-      default:
+        // Redirect based on user type
+        switch (userType) {
+          case "admin":
+            router.push("/admin")
+            break
+          case "student":
+            router.push("/student")
+            break
+          case "alumni":
+            router.push("/alumni")
+            break
+          default:
+            router.push("/auth/login")
+        }
+      } catch (error) {
+        console.error('Auth check error:', error)
         router.push("/auth/login")
+      }
     }
+
+    checkAuthAndRedirect()
   }, [router])
 
   return (

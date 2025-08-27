@@ -208,6 +208,13 @@ export default function AlumniProfile() {
       
       if (response.ok) {
         toast.success('Logged out successfully')
+        try {
+          localStorage.removeItem('isAuthenticated')
+          localStorage.removeItem('userType')
+          localStorage.removeItem('user')
+          localStorage.setItem('auth-change', Date.now().toString())
+          window.dispatchEvent(new Event('auth-change'))
+        } catch {}
         router.push('/auth/login')
       } else {
         toast.error('Failed to logout')
@@ -637,6 +644,33 @@ export default function AlumniProfile() {
                       )}
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                      {editing ? (
+                        <Input
+                          value={editedProfile.department || ''}
+                          onChange={(e) => handleInputChange('department', e.target.value)}
+                          placeholder="e.g., MCA"
+                        />
+                      ) : (
+                        <p className="text-gray-900">{profile.department || 'Not provided'}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Graduation Year</label>
+                      {editing ? (
+                        <Input
+                          value={editedProfile.graduationYear || ''}
+                          onChange={(e) => handleInputChange('graduationYear', e.target.value)}
+                          placeholder="e.g., 2023"
+                        />
+                      ) : (
+                        <p className="text-gray-900">{profile.graduationYear || 'Not provided'}</p>
+                      )}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -943,7 +977,7 @@ export default function AlumniProfile() {
                       <div className="mt-3 space-y-3">
                         <div className="space-y-3">
                           {(post.comments || []).map((c: any) => (
-                            <div key={(c._id as any) || Math.random()} className="flex items-start gap-2">
+                            <div key={(c._id as any) || `comment-${c.firstName}-${c.content?.slice(0, 10)}`} className="flex items-start gap-2">
                               <div className="bg-gray-100 rounded-md px-3 py-2 text-sm">
                                 <span className="font-semibold mr-2">{c.firstName} {c.lastName}</span>
                                 <span>{c.content}</span>

@@ -185,6 +185,7 @@ export default function AlumniDirectory() {
 
   // Get unique graduation years for filter
   const graduationYears = [...new Set(alumni.map(person => person.graduationYear))]
+    .filter((y): y is string => typeof y === 'string' && y.trim() !== '')
     .sort((a, b) => parseInt(b) - parseInt(a))
 
   if (loading) {
@@ -322,7 +323,7 @@ export default function AlumniDirectory() {
               <SelectContent>
                 <SelectItem value="all">Year</SelectItem>
                 {graduationYears.map(year => (
-                  <SelectItem key={year} value={year}>{year}</SelectItem>
+                  <SelectItem key={String(year)} value={year}>{year}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -441,5 +442,3 @@ export default function AlumniDirectory() {
     </div>
   )
 }
-
- 

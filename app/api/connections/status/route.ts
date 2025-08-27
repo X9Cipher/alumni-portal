@@ -30,6 +30,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ status: 'none' })
     }
 
+    // If previously rejected, allow user to send request again by treating as none
+    if (connection.status === 'rejected') {
+      return NextResponse.json({ status: 'none' })
+    }
+
     return NextResponse.json({
       status: connection.status || 'pending',
       connectionId: connection._id,

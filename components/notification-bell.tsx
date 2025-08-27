@@ -230,15 +230,28 @@ export default function NotificationBell({ userType, userId }: NotificationBellP
       
       console.log('Final target link:', targetLink)
       
-      // For post notifications, store the postId in sessionStorage for scrolling after navigation
-      if ((notification.type === 'like' || notification.type === 'comment') && targetLink.includes('postId=')) {
-        const urlParams = new URLSearchParams(targetLink.split('?')[1])
-        const postId = urlParams.get('postId')
+      // For post notifications, open dedicated post page (/student/posts/[id] or /alumni/posts/[id])
+      if (notification.type === 'like' || notification.type === 'comment') {
+        let postId: string | null = null
+        // New format might already be /student/posts/<id> or /alumni/posts/<id>
+        const pathParts = targetLink.split('/')
+        const maybeId = pathParts[pathParts.length - 1]
+        if (/^[a-f\d]{24}$/i.test(maybeId)) {
+          postId = maybeId
+        }
+        // Legacy format ?postId=...
+        if (!postId && targetLink.includes('postId=')) {
+          const urlParams = new URLSearchParams(targetLink.split('?')[1])
+          postId = urlParams.get('postId')
+        }
+
         if (postId) {
-          sessionStorage.setItem('scrollToPostId', postId)
+          const base = userType === 'alumni' ? '/alumni/posts/' : '/student/posts/'
+          router.push(`${base}${postId}`)
+          return
         }
       }
-      
+
       router.push(targetLink)
     } else {
       console.log('No link provided for notification:', notification)

@@ -68,6 +68,15 @@ export class ConnectionService {
     })
 
     if (existingConnection) {
+      if (existingConnection.status === 'rejected') {
+        // Revive as pending
+        await collection.updateOne(
+          { _id: existingConnection._id },
+          { $set: { status: 'pending', requesterId: new ObjectId(requesterId), recipientId: new ObjectId(recipientId), requesterType, recipientType, message, updatedAt: new Date() }, $unset: { acceptedAt: '', rejectedAt: '' } }
+        )
+        const revived = await collection.findOne({ _id: existingConnection._id })
+        return revived as unknown as Connection
+      }
       throw new Error('Connection request already exists')
     }
 
@@ -195,7 +204,55 @@ export class ConnectionService {
       ]
     })
 
+    // If the last connection was rejected, consider as no active connection
+    if (connection && connection.status === 'rejected') {
+      return null
+    }
+
     return connection as Connection | null
+  }
+
+  // Allow re-request: create new pending or revive rejected
+  static async createOrRevivePending(requesterId: string, requesterType: string, recipientId: string, recipientType: string, message?: string): Promise<Connection> {
+    const db = await getDatabase()
+    const collection = db.collection(this.collection)
+
+    // Check existing both directions
+    const existing = await collection.findOne({
+      $or: [
+        { requesterId: new ObjectId(requesterId), recipientId: new ObjectId(recipientId) },
+        { requesterId: new ObjectId(recipientId), recipientId: new ObjectId(requesterId) }
+      ]
+    })
+
+    if (existing) {
+      if (existing.status === 'rejected') {
+        // Revive as pending (as a new request from requester)
+        await collection.updateOne(
+          { _id: existing._id },
+          { $set: { status: 'pending', requesterId: new ObjectId(requesterId), recipientId: new ObjectId(recipientId), requesterType, recipientType, message, updatedAt: new Date() }, $unset: { acceptedAt: '', rejectedAt: '' } }
+        )
+        const revived = await collection.findOne({ _id: existing._id })
+        return revived as unknown as Connection
+      }
+      // If existing is pending or accepted, keep previous behavior by throwing
+      throw new Error('Connection request already exists')
+    }
+
+    // Create fresh pending
+    const connection: Connection = {
+      requesterId: new ObjectId(requesterId),
+      recipientId: new ObjectId(recipientId),
+      status: 'pending',
+      requesterType,
+      recipientType,
+      message,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+    const result = await collection.insertOne(connection)
+    connection._id = result.insertedId
+    return connection
   }
 
   // New method for getting a specific connection

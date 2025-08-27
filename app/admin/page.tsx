@@ -526,7 +526,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button size="icon" variant="ghost">
+                        <Button size="icon" variant="ghost" onClick={() => router.push(user.userType === 'alumni' ? '/admin/alumni' : '/admin/students')}>
                           <Eye className="w-4 h-4" />
                         </Button>
                         <Button 

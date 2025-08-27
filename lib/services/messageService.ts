@@ -379,28 +379,20 @@ export class MessageService {
 
     // Check if connection already exists
     const existingConnection = await ConnectionService.getConnection(senderId, request.recipientId)
-    if (existingConnection) {
+    if (existingConnection && existingConnection.status !== 'rejected') {
       throw new Error('Connection request already exists')
     }
 
     const db = await getDatabase()
     const messagesCollection = db.collection(this.messagesCollection)
-    const connectionsCollection = db.collection('connections')
-
-    // Create the connection request with the initial message
-    const connection: any = {
-      requesterId: new ObjectId(senderId),
-      recipientId: new ObjectId(request.recipientId),
-      status: 'pending',
-      requesterType: senderType,
-      recipientType: recipientType,
-      message: request.content, // Store the initial message in the connection
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-
-    const connectionResult = await connectionsCollection.insertOne(connection)
-    connection._id = connectionResult.insertedId
+    // Create or revive the connection request as pending
+    const connection = await ConnectionService.createOrRevivePending(
+      senderId,
+      senderType,
+      request.recipientId,
+      recipientType,
+      request.content
+    ) as any
 
     // Create a special message to represent the connection request
     const message: Message = {

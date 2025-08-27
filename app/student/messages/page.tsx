@@ -614,7 +614,7 @@ function StudentMessagesContent() {
 
   // pendingConnections is now loaded separately with user info
 
-  return (
+  return (<>
     <div className="flex h-screen w-full bg-gray-50 overflow-hidden">
       {/* Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
@@ -644,8 +644,9 @@ function StudentMessagesContent() {
         <ScrollArea className="flex-1">
           <div className="p-4 space-y-2">
             {conversations.map((conversation) => {
-              const otherParticipant = conversation.participants.find(p => p.toString() !== currentUser._id?.toString())
-              
+              const otherParticipant = conversation.participants.find(
+                (p: any) => p?.toString() !== currentUser._id?.toString()
+              )
               // Try to find user in availableUsers first
               let otherUser = availableUsers.find(u => u._id?.toString() === otherParticipant?.toString())
               
@@ -739,14 +740,20 @@ function StudentMessagesContent() {
                       <div className="font-medium text-sm truncate">
                         {otherUser?.fullName || 'Unknown User'}
                       </div>
-                      {conversation.unreadCount > 0 && (
+                      {(() => {
+                        const isUnreadForMeExplicit = (conversation.unreadCount > 0) && (
+                          (conversation as any).unreadFor?.toString?.() === currentUser._id?.toString()
+                        )
+                        const isUnreadByInference = (conversation.unreadCount > 0) && (!('unreadFor' in (conversation as any)) || !(conversation as any).unreadFor) && (conversation.lastMessage?.senderId?.toString?.() !== currentUser._id?.toString())
+                        return isUnreadForMeExplicit || isUnreadByInference
+                      })() && (
                         <Badge className="bg-[#a41a2f] text-white text-xs">
                           {conversation.unreadCount}
-                          </Badge>
-                        )}
-                      </div>
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-xs text-gray-500 truncate">
-                      {conversation.lastMessage?.content || 'No messages yet'}
+                    {conversation.lastMessage?.content || 'No messages yet'}
                     </div>
                   </div>
                 </div>
@@ -754,7 +761,7 @@ function StudentMessagesContent() {
             })}
           </div>
         </ScrollArea>
-          </div>
+      </div>
 
           {/* Chat Area */}
       <div className="flex-1 flex flex-col">
@@ -772,10 +779,6 @@ function StudentMessagesContent() {
                     </Avatar>
                     <div>
                     <div className="font-semibold">{selectedUser.fullName}</div>
-                    <div className="text-sm text-gray-500 flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${selectedUser.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                      {selectedUser.isOnline ? 'Online' : 'Offline'}
-                    </div>
                   </div>
                 </div>
                 <DropdownMenu>
@@ -884,8 +887,8 @@ function StudentMessagesContent() {
               <p className="text-gray-500">Choose a conversation from the sidebar to start messaging</p>
             </div>
           </div>
-                        )}
-                      </div>
+        )}
+      </div>
 
       {/* New Chat Sidebar */}
       {showNewChat && (
@@ -919,7 +922,7 @@ function StudentMessagesContent() {
               </div>
       )}
     </div>
-  )
+  </>)
 }
 
 export default function StudentMessages() {

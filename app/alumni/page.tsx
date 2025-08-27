@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { MessageSquare, ThumbsUp, Image as ImageIcon, Video as VideoIcon, MoreHorizontal } from "lucide-react"
+import { MessageSquare, ThumbsUp, Image as ImageIcon, Video as VideoIcon, MoreHorizontal, Settings } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -364,6 +364,84 @@ export default function AlumniHome() {
                   <a href="/alumni/profile" className="mt-3 w-full">
                     <Button variant="outline" className="w-full">View Profile</Button>
                   </a>
+                  <a href="/alumni/settings" className="mt-2 w-full">
+                    <Button variant="ghost" className="w-full text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </Button>
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Community Feed Card */}
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Community Feed</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-sm text-gray-600">
+                  Stay connected with your alumni community. Share updates, view posts, and engage with fellow graduates.
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Alumni Directory Card */}
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Alumni Directory</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-sm text-gray-600">
+                  Browse and connect with fellow alumni. Find people from your department, graduation year, or company.
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Student Requests Card */}
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Student Requests</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-sm text-gray-600">
+                  Review and respond to connection requests from current students seeking mentorship and guidance.
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Events Card */}
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Events</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-sm text-gray-600">
+                  Discover upcoming alumni events, workshops, and networking opportunities in your area.
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Jobs Card */}
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Jobs & Internships</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-sm text-gray-600">
+                  Explore job opportunities and internships shared by fellow alumni and partner companies.
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Messages Card */}
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Messages</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-sm text-gray-600">
+                  Stay in touch with your connections through direct messaging and group conversations.
                 </div>
               </CardContent>
             </Card>
@@ -649,7 +727,7 @@ export default function AlumniHome() {
                               return (
                                 <div className="space-y-3">
                                   {post.comments?.slice(0, visible).map((c) => (
-                                    <div key={(c._id as any) || Math.random()} className="flex items-start gap-2">
+                                    <div key={(c._id as any) || `comment-${c.firstName}-${c.content?.slice(0, 10)}`} className="flex items-start gap-2">
                                       <a href={`/${c.userType === 'student' ? 'student' : 'alumni'}/profile/${c.userId}`}>
                                         <Avatar className="w-8 h-8">
                                           <AvatarImage src={commentUserPics[post._id]?.[c.userId]} />

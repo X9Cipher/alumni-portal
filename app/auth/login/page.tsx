@@ -8,13 +8,31 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { GraduationCap, Users, Shield, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
+import OAuthButtons from "@/components/oauth-buttons"
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+// Removed OAuthButtons (Google/LinkedIn) per request
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState("student")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showApprovalModal, setShowApprovalModal] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Surface pending approval error passed back from OAuth
+  if (typeof window !== 'undefined') {
+    const urlError = searchParams?.get('error')
+    if (urlError === 'pending_approval' && error !== 'Your account is pending admin approval.') {
+      setError('Your account is pending admin approval.')
+      setShowApprovalModal(true)
+    } else if (urlError === 'user_type_mismatch' && error !== 'This email is already registered as a different user type. Please use the correct login option.') {
+      setError('This email is already registered as a different user type. Please use the correct login option.')
+    } else if (urlError === 'invalid_user_type' && error !== 'Invalid user type selected. Please try again.') {
+      setError('Invalid user type selected. Please try again.')
+    }
+  }
 
   const [formData, setFormData] = useState({
     student: { email: "", password: "" },
@@ -61,7 +79,14 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Login failed")
+        // If API indicates pending approval, show modal
+        if (data?.error === 'Account pending approval') {
+          setError('Your account is pending admin approval.')
+          setShowApprovalModal(true)
+        } else {
+          throw new Error(data.error || "Login failed")
+        }
+        return
       }
 
       // Store user data in localStorage
@@ -78,7 +103,7 @@ export default function LoginPage() {
         router.push("/")
       }
     } catch (error: any) {
-      setError(error.message)
+      if (!showApprovalModal) setError(error.message)
     } finally {
       setLoading(false)
     }
@@ -100,7 +125,7 @@ export default function LoginPage() {
             <CardTitle className="text-center">Sign In</CardTitle>
           </CardHeader>
           <CardContent>
-            {error && (
+            {error && error !== 'Your account is pending admin approval.' && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
                 {error}
               </div>
@@ -128,7 +153,7 @@ export default function LoginPage() {
                   <Input 
                     id="student-email" 
                     type="email" 
-                    placeholder="student@college.edu"
+                    placeholder="Enter your email"
                     value={formData.student.email}
                     onChange={(e) => handleInputChange("student", "email", e.target.value)}
                     disabled={loading}
@@ -172,7 +197,7 @@ export default function LoginPage() {
                   <Input 
                     id="alumni-email" 
                     type="email" 
-                    placeholder="alumni@company.com"
+                    placeholder="Enter your email"
                     value={formData.alumni.email}
                     onChange={(e) => handleInputChange("alumni", "email", e.target.value)}
                     disabled={loading}
@@ -246,8 +271,31 @@ export default function LoginPage() {
                     "Sign In as Admin"
                   )}
                 </Button>
+                <div className="text-center text-sm text-gray-500 mt-2">
+                  Admin users must use email/password authentication
+                </div>
               </TabsContent>
             </Tabs>
+            
+            {/* OAuth buttons for student/alumni */}
+            <div className="mt-4">
+              <OAuthButtons userType={activeTab as any} />
+            </div>
+
+            {/* Pending approval modal */}
+            <AlertDialog open={showApprovalModal} onOpenChange={setShowApprovalModal}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Account pending admin approval</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Your request has been received and is awaiting review by an administrator. You'll be able to sign in once approved. If this takes too long, please contact your department admin.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogAction onClick={() => setShowApprovalModal(false)}>Got it</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardContent>
         </Card>
       </div>

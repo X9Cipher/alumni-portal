@@ -633,7 +633,13 @@ function AlumniMessagesContent() {
                       >
                         {otherUser?.fullName || 'Unknown User'}
                       </div>
-                      {conversation.unreadCount > 0 && (
+                      {(() => {
+                        const isUnreadForMeExplicit = (conversation.unreadCount > 0) && (
+                          (conversation as any).unreadFor?.toString?.() === currentUser._id?.toString()
+                        )
+                        const isUnreadByInference = (conversation.unreadCount > 0) && (!('unreadFor' in (conversation as any)) || !(conversation as any).unreadFor) && (conversation.lastMessage?.senderId?.toString?.() !== currentUser._id?.toString())
+                        return isUnreadForMeExplicit || isUnreadByInference
+                      })() && (
                         <Badge className="bg-[#a41a2f] text-white text-xs">
                           {conversation.unreadCount}
                         </Badge>
@@ -671,10 +677,6 @@ function AlumniMessagesContent() {
                       onClick={() => router.push(`/alumni/profile/${selectedUser._id}`)}
                     >
                       {selectedUser.fullName}
-                    </div>
-                    <div className="text-sm text-gray-500 flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${selectedUser.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                      {selectedUser.isOnline ? 'Online' : 'Offline'}
                     </div>
                   </div>
                 </div>
