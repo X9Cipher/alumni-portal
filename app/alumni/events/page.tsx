@@ -142,13 +142,7 @@ export default function AlumniEventsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Events</h1>
-          <p className="text-gray-600">Discover networking events, workshops, and social gatherings</p>
-        </div>
-        <div className="flex gap-2"></div>
-      </div>
+      
 
       {error && (
         <Card className="border-red-200 bg-red-50">
@@ -159,9 +153,7 @@ export default function AlumniEventsPage() {
       )}
 
       <Tabs defaultValue="browse" className="w-full">
-        <TabsList className="grid w-full grid-cols-1">
-          <TabsTrigger value="browse">Browse Events</TabsTrigger>
-        </TabsList>
+        
 
         <TabsContent value="browse" className="space-y-6">
           <Card>
@@ -187,7 +179,7 @@ export default function AlumniEventsPage() {
             </CardContent>
           </Card>
 
-          <div className="space-y-4">
+          <div className="space-y-4 lg:space-y-0">
             {filteredEvents.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
@@ -197,40 +189,67 @@ export default function AlumniEventsPage() {
                 </CardContent>
               </Card>
             ) : (
-              filteredEvents.map((event) => (
-                <Card key={event._id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="text-xl font-semibold text-gray-900">{event.title}</h3>
-                          <Badge className={getEventTypeColor(event.type)}>{event.type}</Badge>
-                          {event.isPublic ? (
-                            <Badge variant="outline" className="text-green-600"><Globe className="w-3 h-3 mr-1" />Public</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-orange-600"><Lock className="w-3 h-3 mr-1" />Private</Badge>
-                          )}
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredEvents.map((event) => (
+                  <Card key={event._id} className="hover:shadow-lg transition-shadow h-full">
+                    <CardContent className="p-4 lg:p-5">
+                      <div className="flex flex-col gap-3 mb-3">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-start justify-between">
+                            <h3 className="text-base font-semibold text-gray-900 truncate leading-tight flex-1">{event.title}</h3>
+                            <div className="ml-2">
+                              {isEventUpcoming(event.date) ? (
+                                <Badge className="bg-green-100 text-green-800 text-xs">Upcoming</Badge>
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">Past</Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            <Badge className={getEventTypeColor(event.type)}>{event.type}</Badge>
+                            {event.isPublic ? (
+                              <Badge variant="outline" className="text-green-600 text-xs">
+                                <Globe className="w-3 h-3 mr-1" />
+                                Public
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-orange-600 text-xs">
+                                <Lock className="w-3 h-3 mr-1" />
+                                Private
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-4 text-gray-600 mb-3">
-                          <div className="flex items-center gap-1"><Calendar className="w-4 h-4" />{formatDate(event.date)}</div>
-                          <div className="flex items-center gap-1"><Clock className="w-4 h-4" />{formatTime(event.time)}</div>
-                          <div className="flex items-center gap-1"><MapPin className="w-4 h-4" />{event.location}</div>
+                        
+                        <div className="space-y-2 text-xs text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate font-medium">{formatDate(event.date)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{formatTime(event.time)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{event.location}</span>
+                          </div>
                         </div>
-                        <p className="text-gray-700 mb-3">{event.description}</p>
+                        
+                        <p className="text-gray-700 text-sm line-clamp-2 leading-relaxed">{event.description}</p>
                       </div>
-                      <div className="text-right">
-                        {isEventUpcoming(event.date) ? (
-                          <Badge className="bg-green-100 text-green-800">Upcoming</Badge>
-                        ) : (
-                          <Badge variant="secondary">Past</Badge>
-                        )}
-                      </div>
-                    </div>
 
-                    {/* Actions removed: RSVP, View Details, Comments, Share */}
-                  </CardContent>
-                </Card>
-              ))
+                      {/* Event actions or additional info can go here */}
+                      <div className="pt-2 border-t">
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>Organized by {event.organizer.firstName} {event.organizer.lastName}</span>
+                          <span className="text-gray-400">• {event.organizer.userType === 'admin' ? 'Admin' : 'Alumni'}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </div>
         </TabsContent>

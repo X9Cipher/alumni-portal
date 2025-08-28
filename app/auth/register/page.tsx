@@ -57,7 +57,7 @@ export default function RegisterPage() {
       const currentFormData = formData[userType as keyof typeof formData]
       
       // Basic validation - minimal required fields
-      const requiredFields = ["email", "password"]
+      const requiredFields = ["firstName", "lastName", "email", "password"]
 
       for (const field of requiredFields) {
         if (!currentFormData[field as keyof typeof currentFormData]) {
@@ -139,6 +139,31 @@ export default function RegisterPage() {
               </TabsList>
 
               <TabsContent value="student" className="space-y-4 mt-6">
+                {/* Name fields */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="student-firstName">First Name</Label>
+                    <Input 
+                      id="student-firstName" 
+                      type="text" 
+                      placeholder="John"
+                      value={formData.student.firstName}
+                      onChange={(e) => handleInputChange("student", "firstName", e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="student-lastName">Last Name</Label>
+                    <Input 
+                      id="student-lastName" 
+                      type="text" 
+                      placeholder="Doe"
+                      value={formData.student.lastName}
+                      onChange={(e) => handleInputChange("student", "lastName", e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
                 {/* Minimal required fields only */}
                 <div className="space-y-2">
                   <Label htmlFor="student-email">Email</Label>
@@ -178,6 +203,31 @@ export default function RegisterPage() {
               </TabsContent>
 
               <TabsContent value="alumni" className="space-y-4 mt-6">
+                {/* Name fields */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="alumni-firstName">First Name</Label>
+                    <Input 
+                      id="alumni-firstName" 
+                      type="text" 
+                      placeholder="Jane"
+                      value={formData.alumni.firstName}
+                      onChange={(e) => handleInputChange("alumni", "firstName", e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="alumni-lastName">Last Name</Label>
+                    <Input 
+                      id="alumni-lastName" 
+                      type="text" 
+                      placeholder="Smith"
+                      value={formData.alumni.lastName}
+                      onChange={(e) => handleInputChange("alumni", "lastName", e.target.value)}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
                 {/* Minimal required fields only */}
                 <div className="space-y-2">
                   <Label htmlFor="alumni-email">Email</Label>

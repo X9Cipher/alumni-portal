@@ -149,7 +149,7 @@ export default function StudentDashboard() {
               <CardContent className="pb-4 pt-6">
                 <div className="flex flex-col items-center">
                   <Avatar className="w-28 h-28">
-                    <AvatarImage src={currentUser.profilePicture || currentUser.profileImage} />
+                    <AvatarImage src={(currentUser as any).profilePicture || (currentUser as any).profileImage} />
                     <AvatarFallback className="bg-[#a41a2f] text-white text-xl">
                       {currentUser.firstName?.[0]}
                       {currentUser.lastName?.[0]}
@@ -162,9 +162,9 @@ export default function StudentDashboard() {
                     Student
                   </p>
                   <Badge variant="secondary" className="mt-1">
-                    {currentUser.department || "Department"}
-                    {currentUser.year ? `, Year ${currentUser.year}` : ""}
-                    {currentUser.graduationYear ? `, Class of ${currentUser.graduationYear}` : ""}
+                    {(currentUser as any).department || "Department"}
+                    {(currentUser as any).year ? `, Year ${(currentUser as any).year}` : ""}
+                    {(currentUser as any).graduationYear ? `, Class of ${(currentUser as any).graduationYear}` : ""}
                   </Badge>
                   <a href="/student/profile" className="mt-3 w-full">
                     <Button variant="outline" className="w-full">View Profile</Button>
@@ -414,7 +414,7 @@ function StudentFeed({ currentUser }: { currentUser: any }) {
     if (userIds.length === 0) return
     try {
       const results = await Promise.all(
-        userIds.map(async (id) => {
+        userIds.map(async (id: string) => {
           const res = await fetch(`/api/users/${id}`)
           const data = await res.json()
           if (res.ok && data.user) return { id, pic: data.user.profilePicture || data.user.profileImage || '' }

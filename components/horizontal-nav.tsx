@@ -16,11 +16,16 @@ import {
   Bell,
   Search,
   GraduationCap,
-  BarChart3
+  BarChart3,
+  BookOpen,
+  Menu,
+  X
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "sonner"
+import NotificationBell from "@/components/notification-bell"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 interface HorizontalNavProps {
   userType: 'student' | 'alumni' | 'admin'
@@ -34,6 +39,7 @@ export default function HorizontalNav({ userType, userId, userFirstName, userLas
   const pathname = usePathname() || ''
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const getMenuItems = () => {
     if (userType === 'student') {
@@ -48,11 +54,12 @@ export default function HorizontalNav({ userType, userId, userFirstName, userLas
     } else if (userType === 'alumni') {
       return [
         { title: "Home", url: "/alumni", icon: Home },
-        { title: "Alumni Directory", url: "/alumni/directory", icon: Users },
+        { title: "Alumni Directory", url: "/alumni/directory", icon: BookOpen },
         { title: "Student Requests", url: "/alumni/connections", icon: Users },
         { title: "Jobs & Internships", url: "/alumni/jobs", icon: Briefcase },
         { title: "Events", url: "/alumni/events", icon: Calendar },
         { title: "Messages", url: "/alumni/messages", icon: MessageCircle },
+        { title: "Settings", url: "/alumni/settings", icon: Settings },
       ]
     } else if (userType === 'admin') {
       return [
@@ -113,7 +120,10 @@ export default function HorizontalNav({ userType, userId, userFirstName, userLas
           {/* Middle Section - Main Navigation */}
           <nav className="hidden xl:flex items-center space-x-1">
             {menuItems.map((item) => {
-              const isActive = pathname === item.url || pathname.startsWith(item.url + '/')
+              const isRoot = item.url === `/${userType}`
+              const isActive = isRoot
+                ? pathname === item.url
+                : (pathname === item.url || pathname.startsWith(item.url + '/'))
               return (
                 <Link
                   key={item.title}
@@ -124,8 +134,8 @@ export default function HorizontalNav({ userType, userId, userFirstName, userLas
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   }`}
                 >
-                  <item.icon className="w-4 h-4 mb-1" />
-                  <span className="text-xs">{item.title}</span>
+                  <item.icon className="w-5 h-5" />
+                  <span className="hidden sm:inline text-[11px] md:text-xs">{item.title}</span>
                 </Link>
               )
             })}
@@ -136,12 +146,16 @@ export default function HorizontalNav({ userType, userId, userFirstName, userLas
             
 
             {/* Notifications */}
-            <Link 
-              href={`/${userType}/notifications`} 
-              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
-            >
-              <Bell className="w-4 h-4" />
-            </Link>
+            {userType === 'student' || userType === 'alumni' ? (
+              <NotificationBell userType={userType} userId={userId} />
+            ) : (
+              <Link 
+                href={`/${userType}/notifications`} 
+                className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+              >
+                <Bell className="w-5 h-5" />
+              </Link>
+            )}
 
             
 
@@ -151,36 +165,80 @@ export default function HorizontalNav({ userType, userId, userFirstName, userLas
               onClick={handleLogout}
               variant="ghost"
               size="sm"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 hover:border-red-300 text-xs px-2 py-1 h-8"
+              aria-label="Log out"
+              className="text-red-600 bg-red-50/60 hover:text-white hover:bg-red-600 border border-red-200 hover:border-red-600 rounded-full text-xs px-3 py-1 h-8 shadow-sm transition-colors"
             >
-              <LogOut className="w-3.5 h-3.5 mr-1.5" />
+              <LogOut className="w-4 h-4 mr-1.5" />
               <span className="hidden sm:inline">Logout</span>
             </Button>
+
+            {/* Hamburger Menu for smaller screens */}
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="lg:hidden p-2"
+                  aria-label="Open navigation menu"
+                >
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-lg font-semibold">Menu</h2>
+                    {/* Keep the sheet's built-in close icon; remove extra close button */}
+                  </div>
+
+                  {/* Mobile Navigation Menu */}
+                  <nav className="flex-1 space-y-2">
+                    {menuItems.map((item) => {
+                      const isRoot = item.url === `/${userType}`
+                      const isActive = isRoot
+                        ? pathname === item.url
+                        : (pathname === item.url || pathname.startsWith(item.url + '/'))
+                      return (
+                        <Link
+                          key={item.title}
+                          href={item.url}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'text-blue-600 bg-blue-50 border border-blue-200'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                          }`}
+                        >
+                          <item.icon className="w-5 h-5" />
+                          <span>{item.title}</span>
+                        </Link>
+                      )
+                    })}
+                  </nav>
+
+                  {/* Mobile Profile Section */}
+                  <div className="border-t pt-4 mt-6">
+                    <Link href={`/${userType}/profile`} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 rounded-md">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={profilePicture} />
+                        <AvatarFallback className="bg-blue-600 text-white text-sm font-medium">
+                          {userFirstName?.[0]}{userLastName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {userFirstName} {userLastName}
+                        </div>
+                        <div className="text-xs text-gray-500 capitalize">{userType}</div>
+                      </div>
+                    </Link>
+                    {/* Bottom quick links removed as requested */}
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
-      </div>
-
-      {/* Mobile Navigation */}
-      <div className="lg:hidden border-t border-gray-200 bg-gray-50">
-        <nav className="flex items-center justify-around py-2">
-          {menuItems.slice(0, 5).map((item) => {
-            const isActive = pathname === item.url || pathname.startsWith(item.url + '/')
-            return (
-              <Link
-                key={item.title}
-                href={item.url}
-                className={`flex flex-col items-center px-2 py-1 rounded text-xs font-medium transition-colors ${
-                  isActive
-                    ? 'text-blue-600 bg-blue-50'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <item.icon className="w-4 h-4 mb-1" />
-                <span className="text-center text-xs">{item.title}</span>
-              </Link>
-            )
-          })}
-        </nav>
       </div>
     </header>
   )

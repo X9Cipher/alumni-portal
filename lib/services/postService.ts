@@ -70,6 +70,45 @@ export class PostService {
     return { comments: updated?.comments || [] }
   }
 
+  static async addCommentReply(
+    postId: string,
+    commentId: string,
+    user: { userId: string; userType: 'student' | 'alumni' | 'admin'; firstName: string; lastName: string },
+    content: string
+  ): Promise<{ reply: any; commentAuthorId?: string; commentAuthorType?: 'student' | 'alumni' | 'admin' }> {
+    const db = await getDatabase()
+    const collection = db.collection<Post>(this.collection)
+    const _id = new ObjectId(postId)
+    const cId = new ObjectId(commentId)
+
+    // Load the post to fetch the comment author for notifications
+    const post = await collection.findOne({ _id })
+    // @ts-ignore - comments shape is flexible
+    const targetComment = (post as any)?.comments?.find((c: any) => c._id?.toString() === cId.toString())
+
+    const reply = {
+      _id: new ObjectId(),
+      userId: new ObjectId(user.userId),
+      userType: user.userType,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      content,
+      createdAt: new Date()
+    }
+
+    await collection.updateOne(
+      { _id },
+      { $push: { 'comments.$[c].replies': reply }, $set: { updatedAt: new Date() } },
+      { arrayFilters: [{ 'c._id': cId }] as any }
+    )
+
+    return {
+      reply,
+      commentAuthorId: targetComment?.userId?.toString?.(),
+      commentAuthorType: targetComment?.userType
+    }
+  }
+
   static async updatePost(
     postId: string,
     editor: { userId: string; userType: 'alumni' | 'admin' },

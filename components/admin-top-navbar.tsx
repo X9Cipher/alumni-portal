@@ -15,18 +15,21 @@ export function AdminTopNavbar() {
   }
 
   return (
-    <header className="border-b border-gray-200 bg-white px-6 py-4">
+    <header className="border-b border-gray-200 bg-white px-3 sm:px-6 py-3 sm:py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 flex-1 max-w-md">
+        <div className="flex items-center gap-2 sm:gap-4 flex-1 max-w-md min-w-0">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input placeholder="Search users, content, reports..." className="pl-10 bg-gray-50 border-gray-200" />
+            <Input 
+              placeholder="Search users, content, reports..." 
+              className="pl-10 bg-gray-50 border-gray-200 text-sm" 
+            />
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="relative hover:bg-red-50">
-            <Bell className="w-5 h-5" />
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <Button variant="ghost" size="icon" className="relative hover:bg-red-50 p-2">
+            <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
             <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 bg-[#a41a2f] text-white text-xs flex items-center justify-center">
               3
             </Badge>
@@ -34,8 +37,8 @@ export function AdminTopNavbar() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 p-2 hover:bg-red-50">
-                <Avatar className="w-8 h-8">
+              <Button variant="ghost" className="flex items-center gap-2 p-2 hover:bg-red-50 min-w-0">
+                <Avatar className="w-7 h-7 sm:w-8 sm:h-8">
                   <AvatarImage src="/placeholder.svg?height=32&width=32" />
                   <AvatarFallback className="bg-[#a41a2f] text-white">AD</AvatarFallback>
                 </Avatar>

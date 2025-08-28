@@ -217,10 +217,7 @@ export default function AlumniConnections() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Student Requests</h1>
-        <p className="text-gray-600">Incoming connection requests from students</p>
-      </div>
+      
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -265,8 +262,8 @@ export default function AlumniConnections() {
                     className="hover:shadow-lg transition-shadow border-yellow-200"
                   >
                     <CardContent className="p-6">
-                      <div className="flex items-start gap-4 mb-4">
-                        <Avatar className="w-16 h-16">
+                      <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 mb-4">
+                        <Avatar className="w-16 h-16 shrink-0">
                           <AvatarFallback className="bg-[#a41a2f] text-white">
                             {otherUser.firstName?.[0]}
                             {otherUser.lastName?.[0]}
@@ -290,12 +287,12 @@ export default function AlumniConnections() {
                             Student
                           </div>
                         </div>
-                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 sm:ml-auto mt-2 sm:mt-0">
                           Pending
                         </Badge>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <Button size="sm" className="flex-1" onClick={() => handleShowRequest(connection)}>
                           <MessageSquare className="w-4 h-4 mr-1" />
                           Show

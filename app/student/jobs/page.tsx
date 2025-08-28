@@ -273,7 +273,7 @@ export default function StudentJobs() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start flex-wrap gap-2">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Job Opportunities</h1>
           <p className="text-gray-600">Discover internships and full-time positions from our alumni network</p>
@@ -298,8 +298,8 @@ export default function StudentJobs() {
         <TabsContent value="browse" className="space-y-6">
           {/* Search and Filters */}
           <Card>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <CardContent className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
                 <div className="lg:col-span-2">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -361,21 +361,21 @@ export default function StudentJobs() {
             ) : (
               filteredJobs.map((job) => (
                 <Card key={job._id} className="hover:shadow-lg transition-shadow border-l-4 border-l-green-500">
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-start gap-4">
+                      <div className="flex items-start gap-3 sm:gap-4">
                         <Avatar className="w-12 h-12">
                           <AvatarImage src="/placeholder.svg?height=64&width=64" />
                           <AvatarFallback>{job.company[0]}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 min-w-0">
                             <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
                             <Badge className={getJobTypeColor(job.type)}>
                               {job.type.charAt(0).toUpperCase() + job.type.slice(1)}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-4 text-gray-600 mb-2 text-sm">
+                          <div className="flex flex-wrap items-center gap-3 text-gray-600 mb-2 text-sm">
                             <div className="flex items-center gap-1">
                               <Building className="w-4 h-4" />
                               {job.company}

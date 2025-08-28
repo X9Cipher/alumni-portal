@@ -84,7 +84,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white text-foreground overflow-hidden;
   }
 }
 
@@ -145,6 +145,15 @@
       margin-left: 0;
       width: 100%;
     }
+  }
+
+  /* Hide scrollbar utility for horizontal nav */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 

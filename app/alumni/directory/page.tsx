@@ -200,38 +200,35 @@ export default function AlumniDirectory() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Alumni Directory</h1>
-        <p className="text-gray-600">Connect with fellow alumni from your college</p>
-      </div>
+    <div className="space-y-4 sm:space-y-6">
+      {/* Page Header - Responsive */}
+      
 
       {error && (
         <Card className="border-red-200 bg-red-50">
-          <CardContent className="p-4">
-            <p className="text-red-600">{error}</p>
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-red-600 text-sm">{error}</p>
           </CardContent>
         </Card>
       )}
 
-      {/* Stats Cards - Moved to top */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Stats Cards - Responsive Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         {/* Directory Stats */}
         <Card>
-          <CardContent className="p-4">
-            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
+          <CardContent className="p-3 sm:p-4">
+            <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4 flex items-center gap-2">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
               Directory Stats
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Total Alumni</span>
-                <span className="font-semibold text-blue-600">{totalAlumni}</span>
+                <span className="text-xs sm:text-sm text-gray-600">Total Alumni</span>
+                <span className="font-semibold text-blue-600 text-sm sm:text-base">{totalAlumni}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">New This Month</span>
-                <span className="font-semibold text-purple-600">{recentJoiners.length}</span>
+                <span className="text-xs sm:text-sm text-gray-600">New This Month</span>
+                <span className="font-semibold text-purple-600 text-sm sm:text-base">{recentJoiners.length}</span>
               </div>
             </div>
           </CardContent>
@@ -240,24 +237,24 @@ export default function AlumniDirectory() {
         {/* Top Companies */}
         {topCompanies.length > 0 && (
           <Card>
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Building className="w-5 h-5 text-blue-600" />
+            <CardContent className="p-3 sm:p-4">
+              <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4 flex items-center gap-2">
+                <Building className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                 Top Companies
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {topCompanies.map((company, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between hover:bg-gray-50 p-2 rounded -m-2 cursor-pointer"
+                    className="flex items-center justify-between hover:bg-gray-50 p-1 sm:p-2 rounded -m-1 sm:-m-2 cursor-pointer"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
-                        <Building className="w-3 h-3 text-blue-600" />
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 bg-blue-100 rounded flex items-center justify-center">
+                        <Building className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-blue-600" />
                       </div>
-                      <span className="text-sm font-medium">{company.name}</span>
+                      <span className="text-xs sm:text-sm font-medium truncate">{company.name}</span>
                     </div>
-                    <Badge variant="secondary">{company.count}</Badge>
+                    <Badge variant="secondary" className="text-xs">{company.count}</Badge>
                   </div>
                 ))}
               </div>
@@ -268,15 +265,15 @@ export default function AlumniDirectory() {
         {/* Recent Joiners */}
         {recentJoiners.length > 0 && (
           <Card>
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Star className="w-5 h-5 text-blue-600" />
+            <CardContent className="p-3 sm:p-4">
+              <h3 className="font-semibold text-base sm:text-lg mb-3 sm:mb-4 flex items-center gap-2">
+                <Star className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                 Recent Joiners
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {recentJoiners.map((person, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10">
+                  <div key={index} className="flex items-center gap-2 sm:gap-3">
+                    <Avatar className="w-8 h-8 sm:w-10 sm:h-10">
                       {person.profilePicture ? (
                         <AvatarImage src={person.profilePicture} />
                       ) : null}
@@ -286,7 +283,7 @@ export default function AlumniDirectory() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p 
-                        className="text-sm font-medium truncate hover:text-blue-600 cursor-pointer transition-colors"
+                        className="text-xs sm:text-sm font-medium truncate hover:text-blue-600 cursor-pointer transition-colors"
                         onClick={() => handleProfileClick(person)}
                       >
                         {person.fullName}
@@ -301,23 +298,23 @@ export default function AlumniDirectory() {
         )}
       </div>
 
-      {/* Search and Filters */}
+      {/* Search and Filters - Responsive */}
       <Card>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-1">
+        <CardContent className="p-3 sm:p-4 lg:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <div className="sm:col-span-2 lg:col-span-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
                 <Input 
                   placeholder="Search by name, company..." 
-                  className="pl-10"
+                  className="pl-8 sm:pl-10 text-xs sm:text-sm h-8 sm:h-9"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
             <Select value={filterBatch} onValueChange={setFilterBatch}>
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm h-8 sm:h-9">
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
@@ -328,7 +325,7 @@ export default function AlumniDirectory() {
               </SelectContent>
             </Select>
             <Select value={filterCompany} onValueChange={setFilterCompany}>
-              <SelectTrigger>
+              <SelectTrigger className="text-xs sm:text-sm h-8 sm:h-9">
                 <SelectValue placeholder="Companies" />
               </SelectTrigger>
               <SelectContent>
@@ -341,10 +338,11 @@ export default function AlumniDirectory() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-2 mt-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2 mt-3 sm:mt-4">
             <Button 
               variant="outline" 
               size="sm"
+              className="text-xs sm:text-sm h-8 sm:h-9 w-full sm:w-auto"
               onClick={() => {
                 setSearchTerm("")
                 setFilterBatch("all")
@@ -353,84 +351,86 @@ export default function AlumniDirectory() {
             >
               Clear All
             </Button>
-            <span className="text-sm text-gray-500">
+            <span className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
               {filteredAlumni.length > 0 ? `Showing ${filteredAlumni.length} of ${totalAlumni} alumni` : 'No filters applied - use search or filters to find alumni'}
             </span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Alumni List - Only show when there are search results or filters applied */}
+      {/* Alumni List - Responsive Grid Layout */}
       {filteredAlumni.length > 0 ? (
-        <Card>
-          <CardContent className="p-0">
-            <div className="divide-y divide-gray-200">
-              {filteredAlumni.map((person) => (
-                <div key={person._id} className="p-6 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-12 h-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+          {filteredAlumni.map((person) => (
+            <Card key={person._id} className="hover:shadow-lg transition-all duration-200 h-full">
+              <CardContent className="p-3 sm:p-4 lg:p-5">
+                <div className="flex flex-col gap-3">
+                  {/* Header with Avatar and Name */}
+                  <div className="flex items-start gap-3">
+                    <Avatar className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
                       {person.profilePicture ? (
                         <AvatarImage src={person.profilePicture} />
                       ) : null}
-                      <AvatarFallback className="bg-blue-100 text-blue-600 font-semibold">
+                      <AvatarFallback className="bg-blue-100 text-blue-600 font-semibold text-sm">
                         {person.firstName[0]}{person.lastName[0]}
                       </AvatarFallback>
                     </Avatar>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 
-                            className="font-semibold text-lg text-gray-900 hover:text-blue-600 cursor-pointer transition-colors"
-                            onClick={() => handleProfileClick(person)}
-                          >
-                            {person.fullName}
-                          </h3>
-                          <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
-                            {person.currentCompany && (
-                              <div className="flex items-center gap-1">
-                                <Building className="w-3 h-3" />
-                                {person.currentCompany}
-                              </div>
-                            )}
-                            {person.location && (
-                              <div className="flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
-                                {person.location}
-                              </div>
-                            )}
-                            <Badge variant="secondary">Class of {person.graduationYear}</Badge>
-                          </div>
-                        </div>
-                        
-                        <Button 
-                          size="sm" 
-                          className="bg-[#a41a2f] hover:bg-red-700"
-                          onClick={() => handleMessage(person)}
-                        >
-                          <MessageCircle className="w-4 h-4 mr-2" />
-                          Message
-                        </Button>
-                      </div>
+                      <h3 
+                        className="font-semibold text-base sm:text-lg text-gray-900 hover:text-blue-600 cursor-pointer transition-colors truncate"
+                        onClick={() => handleProfileClick(person)}
+                      >
+                        {person.fullName}
+                      </h3>
+                      <Badge variant="secondary" className="text-xs mt-1">Class of {person.graduationYear}</Badge>
                     </div>
                   </div>
+
+                  {/* Company and Location Info */}
+                  <div className="space-y-2 text-xs sm:text-sm text-gray-600">
+                    {person.currentCompany && (
+                      <div className="flex items-center gap-2">
+                        <Building className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="truncate">{person.currentCompany}</span>
+                      </div>
+                    )}
+                    {person.location && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                        <span className="truncate">{person.location}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Message Button */}
+                  <div className="pt-2 border-t">
+                    <Button 
+                      size="sm" 
+                      className="w-full bg-[#a41a2f] hover:bg-red-700 text-xs sm:text-sm h-8 sm:h-9"
+                      onClick={() => handleMessage(person)}
+                    >
+                      <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      Message
+                    </Button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : (
         // Show this message when no search/filter is applied or no results found
         <Card>
-          <CardContent className="p-8 text-center">
-            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <CardContent className="p-6 sm:p-8 text-center">
+            <Users className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
               {searchTerm || filterBatch !== 'all' || filterCompany !== 'all' 
                 ? 'No alumni found' 
                 : 'Search for alumni'
               }
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 text-sm sm:text-base">
               {searchTerm || filterBatch !== 'all' || filterCompany !== 'all'
                 ? 'Try adjusting your search criteria or filters.'
                 : 'Use the search bar or filters above to find and connect with alumni.'

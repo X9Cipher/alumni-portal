@@ -138,7 +138,7 @@ export default function AlumniHome() {
             createdAt: a.createdAt ? new Date(a.createdAt) : new Date()
           }))
           .sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime())
-        setRecentJoiners(list.slice(0, 5))
+        setRecentJoiners(list.slice(0, 4))
       } catch {}
     }
     fetchRecent()
@@ -323,49 +323,39 @@ export default function AlumniHome() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-hidden">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Welcome back, {alumni.firstName}!</h1>
-            <p className="text-gray-600">
-              {alumni.currentPosition ? `${alumni.currentPosition} at ${alumni.currentCompany || ""}` : "Update your profile to share your role"}
-            </p>
-          </div>
-          
-          {/* Notification Bell */}
-          <NotificationBell userType="alumni" userId={currentUserId} />
-        </div>
+        
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Sidebar (restored) */}
-          <div className="lg:col-span-1 space-y-4">
+          {/* Left Sidebar (profile compact + recent joiners) */}
+          <div className="lg:col-span-1 space-y-4 lg:sticky lg:top-16 self-start">
             <Card className="overflow-hidden">
-              <CardContent className="pb-4 pt-6">
+              <CardContent className="py-4 px-4">
                 <div className="flex flex-col items-center">
-                  <Avatar className="w-28 h-28">
+                  <Avatar className="w-16 h-16">
                     <AvatarImage src={alumni.profileImage} />
                     <AvatarFallback className="bg-[#a41a2f] text-white text-xl">
                       {alumni.firstName?.[0]}
                       {alumni.lastName?.[0]}
                     </AvatarFallback>
                   </Avatar>
-                  <h3 className="font-semibold text-lg mt-3">
+                  <h3 className="font-semibold text-sm mt-2">
                     {alumni.firstName} {alumni.lastName}
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-[11px] text-gray-600">
                     {alumni.currentPosition} {alumni.currentCompany ? `at ${alumni.currentCompany}` : ""}
                   </p>
-                  <Badge variant="secondary" className="mt-1">
+                  <Badge variant="secondary" className="mt-1 text-[10px]">
                     {alumni.department || "Department"}
                     {alumni.graduationYear ? `, Class of ${alumni.graduationYear}` : ""}
                   </Badge>
                   <a href="/alumni/profile" className="mt-3 w-full">
-                    <Button variant="outline" className="w-full">View Profile</Button>
+                    <Button variant="outline" size="sm" className="w-full h-7 text-xs">View Profile</Button>
                   </a>
                   <a href="/alumni/settings" className="mt-2 w-full">
-                    <Button variant="ghost" className="w-full text-gray-600 hover:text-gray-900 hover:bg-gray-100">
+                    <Button variant="ghost" size="sm" className="w-full h-7 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100">
                       <Settings className="w-4 h-4 mr-2" />
                       Settings
                     </Button>
@@ -373,91 +363,22 @@ export default function AlumniHome() {
                 </div>
               </CardContent>
             </Card>
+            
 
-            {/* Community Feed Card */}
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Community Feed</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-sm text-gray-600">
-                  Stay connected with your alumni community. Share updates, view posts, and engage with fellow graduates.
-                </div>
-              </CardContent>
-            </Card>
+            
 
-            {/* Alumni Directory Card */}
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Alumni Directory</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-sm text-gray-600">
-                  Browse and connect with fellow alumni. Find people from your department, graduation year, or company.
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Student Requests Card */}
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Student Requests</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-sm text-gray-600">
-                  Review and respond to connection requests from current students seeking mentorship and guidance.
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Events Card */}
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Events</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-sm text-gray-600">
-                  Discover upcoming alumni events, workshops, and networking opportunities in your area.
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Jobs Card */}
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Jobs & Internships</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-sm text-gray-600">
-                  Explore job opportunities and internships shared by fellow alumni and partner companies.
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Messages Card */}
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Messages</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-sm text-gray-600">
-                  Stay in touch with your connections through direct messaging and group conversations.
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Recent Joiners */}
+            {/* Recent Joiners (compact) */}
               <Card>
-                <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Recent Joiners</CardTitle>
+                <CardHeader className="pb-2">
+                <CardTitle className="text-base">Recent Joiners</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-2 px-4 pb-4">
                 {recentJoiners.length === 0 ? (
                   <div className="text-sm text-gray-500">No new joiners yet.</div>
                 ) : (
                   recentJoiners.map((a: any) => (
-                    <a key={a._id} href={`/alumni/profile/${a._id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                      <Avatar className="w-8 h-8">
+                    <a key={a._id} href={`/alumni/profile/${a._id}`} className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50">
+                      <Avatar className="w-7 h-7">
                         <AvatarImage src={a.profileImage} />
                         <AvatarFallback className="bg-[#a41a2f] text-white text-xs">
                           {a.firstName?.[0]}
@@ -465,9 +386,9 @@ export default function AlumniHome() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
-                        <div className="text-sm font-medium truncate">{a.firstName} {a.lastName}</div>
+                        <div className="text-xs font-medium truncate">{a.firstName} {a.lastName}</div>
                         {a.graduationYear && (
-                          <div className="text-xs text-gray-500 truncate">Class of {a.graduationYear}</div>
+                          <div className="text-[11px] text-gray-500 truncate">Class of {a.graduationYear}</div>
                         )}
                       </div>
                     </a>
@@ -478,7 +399,7 @@ export default function AlumniHome() {
           </div>
 
           {/* Main Feed */}
-          <div className="lg:col-span-3 space-y-4">
+          <div className="lg:col-span-2 space-y-4 lg:max-h-[calc(100vh-6rem)] lg:min-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:overflow-x-hidden lg:pr-2 no-scrollbar">
             {/* Create Post */}
             <Card>
               <CardContent className="p-4">
@@ -781,6 +702,34 @@ export default function AlumniHome() {
                 </Card>
               ))
             )}
+          </div>
+
+          {/* Right Sidebar: Directory, Events, Jobs */}
+          <div className="hidden lg:block lg:col-span-1 space-y-4 lg:sticky lg:top-16 self-start">
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Alumni Directory</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 text-sm text-gray-600">
+                Browse and connect with fellow alumni. Find people from your department, graduation year, or company.
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Events</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 text-sm text-gray-600">
+                Discover upcoming alumni events, workshops, and networking opportunities in your area.
+              </CardContent>
+            </Card>
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Jobs & Internships</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 text-sm text-gray-600">
+                Explore job opportunities and internships shared by fellow alumni and partner companies.
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

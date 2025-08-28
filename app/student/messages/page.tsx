@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, Suspense } from 'react'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -56,6 +57,7 @@ function StudentMessagesContent() {
   const [loading, setLoading] = useState(true)
   const [showNewChat, setShowNewChat] = useState(false)
   const { toast } = useToast()
+  const isMobile = useIsMobile()
   const searchParams = useSearchParams()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
@@ -614,17 +616,22 @@ function StudentMessagesContent() {
 
   // pendingConnections is now loaded separately with user info
 
+  // Decide which panes to show (exclusive on mobile)
+  const showListPane = !isMobile ? true : (!selectedUser && !showNewChat)
+  const showChatPane = !isMobile ? !!selectedUser : (!!selectedUser && !showNewChat)
+  const showNewPane = !isMobile ? !!showNewChat : (!!showNewChat && !selectedUser)
+
   return (<>
-    <div className="flex h-screen w-full bg-gray-50 overflow-hidden">
+    <div className="flex h-[calc(100vh-56px)] w-full bg-white overflow-hidden">
       {/* Sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+      <div className={`${showListPane ? 'flex' : 'hidden'} bg-white sm:border-r sm:border-gray-200 flex-col w-full sm:w-80`}>
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Messages</h2>
             <Button
               size="sm"
-              onClick={() => setShowNewChat(!showNewChat)}
+              onClick={() => setShowNewChat(prev => { if (!prev) { setSelectedUser(null); setSelectedConversation(null as any) } return !prev })}
               className="bg-[#a41a2f] hover:bg-red-700"
             >
               <MessageSquare className="w-4 h-4 mr-2" />
@@ -706,6 +713,7 @@ function StudentMessagesContent() {
                     
                     setSelectedConversation(conversation)
                     setSelectedUser(finalOtherUser || null)
+                    setShowNewChat(false)
                     if (finalOtherUser?._id) {
                       console.log('StudentMessages: Loading messages for user:', finalOtherUser._id)
                       loadMessages(finalOtherUser._id)
@@ -764,7 +772,7 @@ function StudentMessagesContent() {
       </div>
 
           {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className={`${showChatPane ? 'flex' : 'hidden'} flex-1 flex-col w-full`}>
         {selectedUser ? (
           <>
               {/* Chat Header */}
@@ -891,8 +899,8 @@ function StudentMessagesContent() {
       </div>
 
       {/* New Chat Sidebar */}
-      {showNewChat && (
-        <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+      {showNewPane && (
+        <div className={`flex bg-white sm:border-l sm:border-gray-200 flex-col w-full sm:w-80`}>
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Search Users</h3>

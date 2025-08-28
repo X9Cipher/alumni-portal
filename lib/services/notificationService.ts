@@ -257,6 +257,37 @@ export class NotificationService {
     }
   }
 
+  // Notify a user when someone replies to their comment
+  static async notifyCommentReply(
+    postData: { _id: string; authorType: 'alumni' | 'admin'; content: string },
+    details: {
+      recipientId: string
+      recipientType: 'student' | 'alumni' | 'admin'
+      replier: { _id: string; firstName: string; lastName: string; userType: string }
+      commentId: string
+      content: string
+    }
+  ) {
+    try {
+      const notification = {
+        recipientId: details.recipientId,
+        recipientType: details.recipientType,
+        type: 'comment' as const,
+        title: 'New Reply to Your Comment',
+        message: `${details.replier.firstName} ${details.replier.lastName} replied: "${details.content.substring(0, 50)}${details.content.length > 50 ? '...' : ''}"`,
+        userId: details.replier._id,
+        userFirstName: details.replier.firstName,
+        userLastName: details.replier.lastName,
+        userType: details.replier.userType as 'student' | 'alumni' | 'admin',
+        link: postData.authorType === 'alumni' ? `/alumni/posts/${postData._id}` : `/student/posts/${postData._id}`
+      }
+      return await this.createNotification(notification)
+    } catch (error) {
+      console.error('Error notifying comment reply:', error)
+      throw error
+    }
+  }
+
   // Notify student when their connection request is accepted by an alumni
   static async notifyConnectionAccepted(connectionData: {
     studentId: string

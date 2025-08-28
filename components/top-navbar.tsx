@@ -76,25 +76,28 @@ export function TopNavbar() {
   }
 
   return (
-    <header className="border-b border-gray-200 bg-white px-6 py-4">
+    <header className="border-b border-gray-200 bg-white px-3 sm:px-6 py-3 sm:py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4 flex-1 max-w-md">
+        <div className="flex items-center gap-2 sm:gap-4 flex-1 max-w-md min-w-0">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input placeholder="Search alumni, companies, skills..." className="pl-10 bg-gray-50 border-gray-200" />
+            <Input 
+              placeholder="Search alumni, companies, skills..." 
+              className="pl-10 bg-gray-50 border-gray-200 text-sm" 
+            />
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <Button variant="ghost" size="icon" className="relative p-2">
+            <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs"></span>
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 p-2">
-                <Avatar className="w-8 h-8">
+              <Button variant="ghost" className="flex items-center gap-2 p-2 min-w-0">
+                <Avatar className="w-7 h-7 sm:w-8 sm:h-8">
                   <AvatarImage src={(user as any)?.profilePicture || "/placeholder.svg?height=32&width=32"} />
                   <AvatarFallback>
                     {user && !loading ? getInitials(user.firstName, user.lastName) : 'U'}

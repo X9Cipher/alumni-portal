@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import HorizontalNav from "./horizontal-nav"
 
 interface AlumniLayoutWrapperProps {
@@ -12,6 +12,7 @@ export function AlumniLayoutWrapper({ children }: AlumniLayoutWrapperProps) {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -54,8 +55,11 @@ export function AlumniLayoutWrapper({ children }: AlumniLayoutWrapperProps) {
     return null
   }
 
+  // Only lock body scroll on desktop for /alumni and /alumni/messages
+  const isFixedRoute = pathname === '/alumni' || pathname.startsWith('/alumni/messages')
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-white prevent-overflow flex flex-col ${isFixedRoute ? 'lg:h-screen lg:overflow-hidden' : ''}`}>
       <HorizontalNav
         userType="alumni"
         userId={user._id}
@@ -63,8 +67,8 @@ export function AlumniLayoutWrapper({ children }: AlumniLayoutWrapperProps) {
         userLastName={user.lastName}
         profilePicture={user.profilePicture}
       />
-      <main className="pt-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className={`pt-1 sm:pt-1 pb-0 ${isFixedRoute ? 'lg:flex-1 lg:min-h-0 lg:overflow-hidden' : ''}`}>
+        <div className={`max-w-screen-xl mx-auto px-3 sm:px-4 lg:px-8 w-full pb-0 ${isFixedRoute ? 'lg:h-full lg:overflow-hidden' : ''}`}>
           {children}
         </div>
       </main>

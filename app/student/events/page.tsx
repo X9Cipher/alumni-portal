@@ -202,7 +202,7 @@ export default function StudentEvents() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start flex-wrap gap-2">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Events And Workshops</h1>
           <p className="text-gray-600">Discover networking events, workshops, and social gatherings</p>
@@ -226,8 +226,8 @@ export default function StudentEvents() {
         <TabsContent value="browse" className="space-y-6">
           {/* Search + Time filter */}
           <Card>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
+            <CardContent className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 items-center">
                 <div className="relative lg:col-span-2">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input placeholder="Search events, topics, or locations..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
@@ -259,10 +259,10 @@ export default function StudentEvents() {
             ) : (
               filteredEvents.map((event) => (
                 <Card key={event._id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-2 mb-2 min-w-0">
                           <h3 className="text-xl font-semibold text-gray-900">{event.title}</h3>
                           <Badge className={getEventTypeColor(event.type)}>
                             {event.type}
@@ -279,7 +279,7 @@ export default function StudentEvents() {
                             </Badge>
                           )}
                         </div>
-                        <div className="flex items-center gap-4 text-gray-600 mb-3">
+                        <div className="flex flex-wrap items-center gap-3 text-gray-600 mb-3">
                           <div className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
                             {formatDate(event.date)}

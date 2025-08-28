@@ -258,56 +258,41 @@ export default function AlumniJobs() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Job Opportunities</h1>
-          <p className="text-gray-600">Browse and manage job postings from the alumni network</p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            className="bg-green-600 hover:bg-green-700"
-            onClick={() => router.push('/alumni/jobs/create')}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Post Job
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-4 lg:space-y-6">
 
       {error && (
         <Card className="border-red-200 bg-red-50">
-          <CardContent className="p-4">
-            <p className="text-red-600">{error}</p>
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-red-600 text-sm">{error}</p>
           </CardContent>
         </Card>
       )}
 
       <Tabs defaultValue="browse" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="browse">Browse All Jobs ({allJobs.length})</TabsTrigger>
-          <TabsTrigger value="applied">Applied Jobs ({appliedJobIds.size})</TabsTrigger>
-          <TabsTrigger value="my-jobs">My Job Posts ({myJobs.length})</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 h-9 sm:h-10">
+          <TabsTrigger value="browse" className="text-xs px-2 sm:px-3">Browse All Jobs ({allJobs.length})</TabsTrigger>
+          <TabsTrigger value="applied" className="text-xs px-2 sm:px-3">Applied Jobs ({appliedJobIds.size})</TabsTrigger>
+          <TabsTrigger value="my-jobs" className="text-xs px-2 sm:px-3">My Job Posts ({myJobs.length})</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="browse" className="space-y-6">
-          {/* Search and Filters */}
+        <TabsContent value="browse" className="space-y-4 lg:space-y-6 mt-4 sm:mt-6">
+          {/* Search and Filters - Compact for small screens */}
           <Card>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <CardContent className="p-3 sm:p-4 lg:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 sm:gap-4 items-start">
                 <div className="lg:col-span-1">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3 sm:w-4 sm:h-4" />
                     <Input 
                       placeholder="Search jobs..." 
-                      className="pl-10"
+                      className="pl-8 sm:pl-10 text-xs sm:text-sm h-8 sm:h-9"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
                 </div>
                 <Select value={filterExperience} onValueChange={setFilterExperience}>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-xs sm:text-sm h-8 sm:h-9">
                     <SelectValue placeholder="Experience" />
                   </SelectTrigger>
                   <SelectContent>
@@ -318,7 +303,7 @@ export default function AlumniJobs() {
                   </SelectContent>
                 </Select>
                 <Select value={filterType} onValueChange={setFilterType}>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-xs sm:text-sm h-8 sm:h-9">
                     <SelectValue placeholder="Job Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -329,7 +314,7 @@ export default function AlumniJobs() {
                   </SelectContent>
                 </Select>
                 <Select value={filterStatus} onValueChange={(value: 'all' | 'active' | 'inactive') => setFilterStatus(value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-xs sm:text-sm h-8 sm:h-9">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -338,6 +323,17 @@ export default function AlumniJobs() {
                     <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
+                {/* Post Job button aligned at end */}
+                <div className="flex justify-end lg:justify-end xl:justify-end">
+                  <Button 
+                    className="bg-green-600 hover:bg-green-700 w-full sm:w-auto text-xs sm:text-sm px-3 sm:px-4 py-2 h-8 sm:h-9"
+                    onClick={() => router.push('/alumni/jobs/create')}
+                  >
+                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Post Job</span>
+                    <span className="sm:hidden">Post</span>
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -353,101 +349,111 @@ export default function AlumniJobs() {
                 </CardContent>
               </Card>
             ) : (
-              allJobs.map((job) => (
-                <Card key={job._id} className="hover:shadow-lg transition-shadow border-l-4 border-l-green-500">
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-start gap-4">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src="/placeholder.svg?height=64&width=64" />
-                          <AvatarFallback>{job.company[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-lg font-semibold text-gray-900">{job.title}</h3>
-                          <Badge className={getJobTypeColor(job.type)}>
-                            {job.type.charAt(0).toUpperCase() + job.type.slice(1)}
-                          </Badge>
-                          {!job.isActive && (
-                            <Badge variant="secondary">Inactive</Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-4 text-gray-600 mb-2 text-sm">
-                          <div className="flex items-center gap-1">
-                            <Building className="w-4 h-4" />
-                            {job.company}
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                {allJobs.map((job) => (
+                  <Card key={job._id} className="hover:shadow-lg transition-shadow border-l-4 border-l-green-500 h-full">
+                    <CardContent className="p-4 lg:p-5">
+                      <div className="flex flex-col gap-3 mb-3">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="w-10 h-10 flex-shrink-0">
+                            <AvatarImage src="/placeholder.svg?height=64&width=64" />
+                            <AvatarFallback className="text-sm">{job.company[0]}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col gap-2 mb-2">
+                              <h3 className="text-base font-semibold text-gray-900 truncate leading-tight">{job.title}</h3>
+                              <div className="flex flex-wrap gap-1">
+                                <Badge className={getJobTypeColor(job.type)}>
+                                  {job.type.charAt(0).toUpperCase() + job.type.slice(1)}
+                                </Badge>
+                                {!job.isActive && (
+                                  <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-4 h-4" />
-                            {job.location}
+                        </div>
+                        
+                        <div className="space-y-2 text-xs text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <Building className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate font-medium">{job.company}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{job.location}</span>
                           </div>
                           {job.salary && (
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="w-4 h-4" />
-                              {job.salary}
+                            <div className="flex items-center gap-2">
+                              <DollarSign className="w-3 h-3 flex-shrink-0" />
+                              <span className="truncate">{job.salary}</span>
                             </div>
                           )}
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            {formatDate(job.createdAt)}
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">{formatDate(job.createdAt)}</span>
                           </div>
                         </div>
-                        <p className="text-gray-700 mb-2 line-clamp-2">{job.description}</p>
+                        
+                        <p className="text-gray-700 text-sm line-clamp-2 leading-relaxed">{job.description}</p>
+                        
                         {job.requirements.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {job.requirements.slice(0, 3).map((req, index) => (
+                          <div className="flex flex-wrap gap-1">
+                            {job.requirements.slice(0, 2).map((req, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
                                 {req}
                               </Badge>
                             ))}
-                            {job.requirements.length > 3 && (
+                            {job.requirements.length > 2 && (
                               <Badge variant="outline" className="text-xs">
-                                +{job.requirements.length - 3} more
+                                +{job.requirements.length - 2} more
                               </Badge>
                             )}
                           </div>
                         )}
+                      </div>
+
+                      {/* Posted by (compact) */}
+                      <div className="mb-3 text-xs text-gray-500 flex items-center gap-2">
+                        <Avatar className="w-5 h-5">
+                          <AvatarFallback className="bg-green-600 text-white text-[8px]">
+                            {job.postedBy.firstName[0]}{job.postedBy.lastName[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="truncate">
+                          Posted by {job.postedBy.firstName} {job.postedBy.lastName}
+                        </span>
+                      </div>
+
+                      {/* Actions - Compact for cards */}
+                      <div className="flex flex-col gap-2 pt-2 border-t">
+                        <div className="flex items-center gap-2 text-xs text-gray-600">
+                          <Users className="w-3 h-3" />
+                          {job.applications} applications
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setViewJob(job)} className="flex-1 text-xs h-8">
+                            View Details
+                          </Button>
+                          <Button
+                            size="sm"
+                            className={`flex-1 text-xs h-8 ${
+                              appliedJobIds.has(job._id) 
+                                ? 'bg-gray-300 text-gray-600 cursor-not-allowed' 
+                                : 'bg-green-600 hover:bg-green-700'
+                            }`}
+                            disabled={appliedJobIds.has(job._id)}
+                            onClick={() => openApply(job)}
+                          >
+                            <ExternalLink className="w-3 h-3 mr-1" />
+                            {appliedJobIds.has(job._id) ? 'Applied' : 'Apply'}
+                          </Button>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Posted by (compact) */}
-                    <div className="mb-3 text-xs text-gray-500 flex items-center gap-2">
-                      <Avatar className="w-6 h-6">
-                        <AvatarFallback className="bg-green-600 text-white text-[10px]">
-                          {job.postedBy.firstName[0]}{job.postedBy.lastName[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>
-                        Posted by {job.postedBy.firstName} {job.postedBy.lastName} · {job.postedBy.userType === 'admin' ? 'College Administration' : 'Alumni'}
-                      </span>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex justify-between items-center pt-2 border-t">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Users className="w-4 h-4" />
-                        {job.applications} applications
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setViewJob(job)}>
-                          View Details
-                        </Button>
-                        {/* Save removed */}
-                        <Button
-                          size="sm"
-                          className={appliedJobIds.has(job._id) ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}
-                          disabled={appliedJobIds.has(job._id)}
-                          onClick={() => openApply(job)}
-                        >
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          {appliedJobIds.has(job._id) ? 'Applied' : 'Apply'}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </div>
         </TabsContent>

@@ -168,6 +168,48 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: true, ...result })
     }
 
+    if (action === 'reply') {
+      const body = await request.json()
+      if (!body?.content || !body?.commentId) return NextResponse.json({ error: 'content and commentId required' }, { status: 400 })
+      const result = await PostService.addCommentReply(postId, body.commentId, {
+        userId: decoded.userId,
+        userType: decoded.userType,
+        firstName: decoded.firstName,
+        lastName: decoded.lastName
+      }, body.content)
+
+      // Send notification to original comment author (not to self)
+      try {
+        const db = await getDatabase()
+        const post = await db.collection('posts').findOne({ _id: new ObjectId(postId) })
+        if (post && result.commentAuthorId && result.commentAuthorId !== decoded.userId) {
+          await NotificationService.notifyCommentReply(
+            {
+              _id: postId,
+              authorType: post.authorType,
+              content: post.content
+            } as any,
+            {
+              recipientId: result.commentAuthorId,
+              recipientType: result.commentAuthorType || 'alumni',
+              replier: {
+                _id: decoded.userId,
+                firstName: decoded.firstName || 'User',
+                lastName: decoded.lastName || 'User',
+                userType: decoded.userType
+              },
+              commentId: body.commentId,
+              content: body.content
+            }
+          )
+        }
+      } catch (e) {
+        console.error('Failed to send reply notification:', e)
+      }
+
+      return NextResponse.json({ success: true, ...result })
+    }
+
     if (action === 'edit') {
       const body = await request.json()
       const ok = await PostService.updatePost(postId, { userId: decoded.userId, userType: decoded.userType as any }, body)

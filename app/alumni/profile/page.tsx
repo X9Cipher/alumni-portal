@@ -30,7 +30,9 @@ import {
   Image as ImageIcon,
   Video as VideoIcon,
   MoreHorizontal,
-  Eye
+  Eye,
+  Plus,
+  Trash2
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -48,7 +50,7 @@ interface AlumniProfile {
   phone?: string
   graduationYear: string
   degree: string
-  major: string
+  // major: string
   department: string
   currentCompany?: string
   currentPosition?: string
@@ -296,6 +298,29 @@ export default function AlumniProfile() {
     }))
   }
 
+  const addArrayItem = (field: 'skills' | 'experience' | 'achievements') => {
+    setEditedProfile(prev => {
+      const current = (prev[field] as string[] | undefined) || []
+      return { ...prev, [field]: [...current, ""] }
+    })
+  }
+
+  const updateArrayItem = (field: 'skills' | 'experience' | 'achievements', index: number, value: string) => {
+    setEditedProfile(prev => {
+      const current = ([...((prev[field] as string[] | undefined) || [])])
+      current[index] = value
+      return { ...prev, [field]: current }
+    })
+  }
+
+  const removeArrayItem = (field: 'skills' | 'experience' | 'achievements', index: number) => {
+    setEditedProfile(prev => {
+      const current = ([...((prev[field] as string[] | undefined) || [])])
+      current.splice(index, 1)
+      return { ...prev, [field]: current }
+    })
+  }
+
   const handleProfilePictureChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
@@ -356,28 +381,22 @@ export default function AlumniProfile() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
-          <p className="text-gray-600">Manage your professional information and network presence</p>
-        </div>
+      <div className="flex items-start justify-end">
+        
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleLogout} className="hover:bg-red-50 hover:text-red-600">
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+          
           {!editing ? (
-            <Button onClick={() => setEditing(true)} className="bg-blue-600 hover:bg-blue-700">
+            <Button onClick={() => setEditing(true)} className="bg-blue-600 hover:bg-blue-700 h-8 px-3 text-sm">
               <Edit3 className="w-4 h-4 mr-2" />
               Edit Profile
             </Button>
           ) : (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleCancel}>
+              <Button variant="outline" onClick={handleCancel} className="h-8 px-3 text-sm">
                 <X className="w-4 h-4 mr-2" />
                 Cancel
               </Button>
-              <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={handleSave} disabled={saving} className="bg-blue-600 hover:bg-blue-700 h-8 px-3 text-sm">
                 {saving ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
@@ -390,13 +409,13 @@ export default function AlumniProfile() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Profile Card */}
         <div className="lg:col-span-1">
           <Card>
-            <CardContent className="p-6 text-center">
+            <CardContent className="p-4 sm:p-6 text-center">
               <div className="relative mb-4">
-                <Avatar className="w-24 h-24 mx-auto">
+                <Avatar className="w-20 h-20 sm:w-24 sm:h-24 mx-auto">
                   {profilePicturePreview || profile.profilePicture ? (
                     <AvatarImage 
                       src={profilePicturePreview || profile.profilePicture} 
@@ -411,7 +430,7 @@ export default function AlumniProfile() {
                 {editing && (
                   <div className="absolute -bottom-2 -right-2">
                     <label htmlFor="profile-picture" className="cursor-pointer">
-                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors">
                         <Edit3 className="w-4 h-4 text-white" />
                       </div>
                       <input
@@ -454,7 +473,7 @@ export default function AlumniProfile() {
                 </div>
               ) : (
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
                     {profile.firstName} {profile.lastName}
                   </h2>
                   <p className="text-gray-600 mb-2">Alumni</p>
@@ -465,7 +484,7 @@ export default function AlumniProfile() {
                 {profile.isApproved ? "Approved" : "Pending Approval"}
               </Badge>
 
-              <div className="space-y-2 text-sm text-gray-600">
+              <div className="space-y-2 text-xs sm:text-sm text-gray-600">
                 <div className="flex items-center justify-center gap-2">
                   <Mail className="w-4 h-4" />
                   {profile.email}
@@ -476,7 +495,7 @@ export default function AlumniProfile() {
                 </div>
                 <div className="flex items-center justify-center gap-2">
                   <GraduationCap className="w-4 h-4" />
-                  {profile.degree} in {profile.major}
+                  {profile.degree}
                 </div>
                 {profile.currentCompany && (
                   <div className="flex items-center justify-center gap-2">
@@ -490,23 +509,23 @@ export default function AlumniProfile() {
         </div>
 
         {/* Main Profile Information and Activity */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-2 h-9 text-sm">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
               <Card>
-                <CardHeader>
+                <CardHeader className="py-3">
                   <CardTitle className="flex items-center gap-2">
                     <User className="w-5 h-5" />
                     Personal Information
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   {editing ? (
@@ -551,14 +570,14 @@ export default function AlumniProfile() {
 
               {/* Professional Information */}
               <Card>
-                <CardHeader>
+                <CardHeader className="py-3">
                   <CardTitle className="flex items-center gap-2">
                     <Briefcase className="w-5 h-5" />
                     Professional Information
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Current Company</label>
                       {editing ? (
@@ -586,14 +605,28 @@ export default function AlumniProfile() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Professional Experience</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-sm font-medium text-gray-700">Professional Experience</label>
+                      {editing && (
+                        <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => addArrayItem('experience')}>
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                     {editing ? (
-                      <Textarea
-                        value={editedProfile.experience?.join('\n') || ''}
-                        onChange={(e) => handleArrayInputChange('experience', e.target.value.replace(/\n/g, ','))}
-                        placeholder="List your work experience (one per line)"
-                        rows={4}
-                      />
+                      <div className="space-y-2">
+                        {((editedProfile.experience as string[]) || []).map((exp, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <Input value={exp} onChange={(e) => updateArrayItem('experience', idx, e.target.value)} placeholder={`Experience ${idx + 1}`} />
+                            <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => removeArrayItem('experience', idx)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        {(!editedProfile.experience || (editedProfile.experience as string[]).length === 0) && (
+                          <p className="text-sm text-gray-500">No items yet. Click Add to create one.</p>
+                        )}
+                      </div>
                     ) : (
                       <div className="space-y-1">
                         {profile.experience && profile.experience.length > 0 ? (
@@ -611,14 +644,14 @@ export default function AlumniProfile() {
 
               {/* Academic Background */}
               <Card>
-                <CardHeader>
+                <CardHeader className="py-3">
                   <CardTitle className="flex items-center gap-2">
                     <GraduationCap className="w-5 h-5" />
                     Academic Background
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="space-y-3 sm:space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Degree</label>
                       {editing ? (
@@ -631,21 +664,10 @@ export default function AlumniProfile() {
                         <p className="text-gray-900">{profile.degree}</p>
                       )}
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Major</label>
-                      {editing ? (
-                        <Input
-                          value={editedProfile.major || ''}
-                          onChange={(e) => handleInputChange('major', e.target.value)}
-                          placeholder="e.g., Computer Science"
-                        />
-                      ) : (
-                        <p className="text-gray-900">{profile.major}</p>
-                      )}
-                    </div>
+                    {/* Major removed */}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                       {editing ? (
@@ -676,21 +698,36 @@ export default function AlumniProfile() {
 
               {/* Skills & Achievements */}
               <Card>
-                <CardHeader>
+                <CardHeader className="py-3">
                   <CardTitle className="flex items-center gap-2">
                     <Award className="w-5 h-5" />
                     Skills & Achievements
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Skills</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-sm font-medium text-gray-700">Skills</label>
+                      {editing && (
+                        <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => addArrayItem('skills')}>
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                     {editing ? (
-                      <Input
-                        value={editedProfile.skills?.join(', ') || ''}
-                        onChange={(e) => handleArrayInputChange('skills', e.target.value)}
-                        placeholder="e.g., JavaScript, Python, React, Leadership (comma separated)"
-                      />
+                      <div className="space-y-2">
+                        {((editedProfile.skills as string[]) || []).map((skill, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <Input value={skill} onChange={(e) => updateArrayItem('skills', idx, e.target.value)} placeholder={`Skill ${idx + 1}`} />
+                            <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => removeArrayItem('skills', idx)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        {(!editedProfile.skills || (editedProfile.skills as string[]).length === 0) && (
+                          <p className="text-sm text-gray-500">No items yet. Click Add to create one.</p>
+                        )}
+                      </div>
                     ) : (
                       <div className="flex flex-wrap gap-2">
                         {profile.skills && profile.skills.length > 0 ? (
@@ -705,14 +742,28 @@ export default function AlumniProfile() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Achievements</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-sm font-medium text-gray-700">Achievements</label>
+                      {editing && (
+                        <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => addArrayItem('achievements')}>
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                     {editing ? (
-                      <Textarea
-                        value={editedProfile.achievements?.join('\n') || ''}
-                        onChange={(e) => handleArrayInputChange('achievements', e.target.value.replace(/\n/g, ','))}
-                        placeholder="List your achievements (one per line)"
-                        rows={3}
-                      />
+                      <div className="space-y-2">
+                        {((editedProfile.achievements as string[]) || []).map((ach, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <Input value={ach} onChange={(e) => updateArrayItem('achievements', idx, e.target.value)} placeholder={`Achievement ${idx + 1}`} />
+                            <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => removeArrayItem('achievements', idx)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        {(!editedProfile.achievements || (editedProfile.achievements as string[]).length === 0) && (
+                          <p className="text-sm text-gray-500">No items yet. Click Add to create one.</p>
+                        )}
+                      </div>
                     ) : (
                       <div className="space-y-1">
                         {profile.achievements && profile.achievements.length > 0 ? (
@@ -730,13 +781,13 @@ export default function AlumniProfile() {
 
               {/* Social Links */}
               <Card>
-                <CardHeader>
+                <CardHeader className="py-3">
                   <CardTitle className="flex items-center gap-2">
                     <Globe className="w-5 h-5" />
                     Professional Links
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn URL</label>
                     {editing ? (
@@ -793,13 +844,13 @@ export default function AlumniProfile() {
 
               {/* Privacy Settings */}
               <Card>
-                <CardHeader>
+                <CardHeader className="py-3">
                   <CardTitle className="flex items-center gap-2">
                     <Eye className="w-5 h-5" />
                     Privacy Settings
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Mail className="w-5 h-5 text-gray-500" />
@@ -833,7 +884,7 @@ export default function AlumniProfile() {
 
             <TabsContent value="activity">
               <Card>
-                <CardHeader>
+                <CardHeader className="py-3">
                   <CardTitle>Activity</CardTitle>
                 </CardHeader>
                 <CardContent>
